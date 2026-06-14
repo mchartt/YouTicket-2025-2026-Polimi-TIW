@@ -44,6 +44,7 @@ export async function login(username: string, pass: string) {
 }
 
 export async function toggleAutoAssegnazione(username: string, attiva: boolean) { //per attivare o disattivare l'auto-assegnazione
+  if (!await db.user.findUnique({ where: { username } })) throw new ApiError(404, "Utente non trovato"); //evito il 500 (P2025) su username inesistente
   await db.user.update({ where: { username }, data: { autoAssegnazione: attiva } }); //per aggiornare l'auto-assegnazione dell'utente
   if (attiva) await assegnaInAttesa(); //se l'auto-assegnazione è attiva, assegniamo i ticket in attesa
   return { attiva };

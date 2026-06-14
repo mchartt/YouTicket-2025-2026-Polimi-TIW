@@ -39,14 +39,29 @@ model Ticket {
   tecnico            String?
   priorita           String?
   valutazione        Int?
+  archiviato         Boolean  @default(false)
   dataValutazione    String?  @map("data_valutazione")
   dataCreazione      String?  @map("data_creazione")
   dataAggiornamento  String?  @map("data_aggiornamento")
 
   ticketComments  TicketComment[]
   ticketStateLogs TicketStateLog[]
+  allegati        Allegato[]
 
   @@map("tickets")
+}
+
+model Allegato {
+  id        Int    @id @default(autoincrement())
+  ticketId  Int    @map("ticket_id")
+  nomeFile  String @map("nome_file")
+  tipo      String
+  dati      String
+  creatoIl  String @map("creato_il")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("allegati")
 }
 
 model TicketComment {

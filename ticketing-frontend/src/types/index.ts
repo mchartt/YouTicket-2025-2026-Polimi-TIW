@@ -17,6 +17,7 @@ export interface Ticket {
   tecnico?: string;
   priorita?: string | null;
   valutazione?: number;
+  archiviato?: boolean;
   dataCreazione: string;
   dataAggiornamento: string;
 }
@@ -34,5 +35,12 @@ export interface TicketDetail extends Ticket {
     statoNuovo: string;
     cambiatoIl: string;
     cambiatoDa?: string;
+  }[];
+
+  allegati: {
+    id: number;
+    nomeFile: string;
+    tipo: string;
+    creatoIl: string;
   }[];
 }

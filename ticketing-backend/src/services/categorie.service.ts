@@ -11,6 +11,7 @@ export async function creaCategoria(nome: string) {
 }
 
 export async function toggleCategoria(id: number, attivo: boolean) { //per attivare o disattivare una categoria
+  if (!await db.categoria.findUnique({ where: { id } })) throw new ApiError(404, "Categoria non trovata"); //evito il 500 (P2025) su id inesistente
   return db.categoria.update({ where: { id }, data: { attivo } }); //per aggiornare la categoria
 }
 

@@ -1,0 +1,75 @@
+/* Tema soft e arrotondato basato solo su Bootstrap (override delle variabili) */
+:root {
+  --bs-border-radius: 0.85rem;
+  --bs-border-radius-sm: 0.65rem;
+  --bs-border-radius-lg: 1.1rem;
+  --bs-border-radius-xl: 1.4rem;
+}
+
+body {
+  background-color: #f4f6fb;
+}
+
+.card {
+  box-shadow: 0 6px 20px rgba(30, 41, 59, 0.07);
+}
+
+.btn {
+  border-radius: 50rem;
+  font-weight: 500;
+}
+
+.form-control,
+.form-select {
+  border-radius: var(--bs-border-radius);
+  padding: 0.55rem 0.85rem;
+}
+
+.modal-content {
+  border: none;
+  border-radius: var(--bs-border-radius-lg);
+}
+
+.badge {
+  font-weight: 600;
+}
+
+/* Nei gruppi input tengo gli angoli accostati: il tema a pillola non deve staccare i pezzi */
+.input-group > .form-control:not(:last-child),
+.input-group > .input-group-text:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group > .form-control:not(:first-child),
+.input-group > .btn:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.input-group > .btn:last-child {
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+.input-group > .input-group-text:first-child {
+  border-top-left-radius: var(--bs-border-radius);
+  border-bottom-left-radius: var(--bs-border-radius);
+}
+
+/* Dettaglio ticket: altezza fissa così il modal non cambia forma a ogni commento */
+.ticket-detail {
+  height: 85vh;
+}
+.ticket-detail .modal-body {
+  overflow: hidden;
+}
+@media (max-width: 767.98px) {
+  .ticket-detail {
+    height: auto;
+    max-height: 92vh;
+  }
+  .ticket-detail .modal-body {
+    overflow: auto;
+  }
+  .ticket-detail .border-end {
+    border-right: 0 !important;
+  }
+}
