@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int     @id @default(autoincrement())
+  username         String  @unique
+  password         String
+  nome             String?
+  cognome          String?
+  email            String?
+  ruolo            String?
+  autoAssegnazione Boolean @default(false)
+
+  @@map("users")
+}
+
+model Categoria {
+  id     Int     @id @default(autoincrement())
+  nome   String  @unique
+  colore String?
+  attivo Boolean @default(true)
+
+  @@map("categorie")
+}
+
+model Ticket {
+  id                 Int      @id @default(autoincrement())
+  titolo             String
+  descrizione        String
+  categoria          String
+  stato              String?
+  autore             String?
+  tecnico            String?
+  priorita           String?
+  valutazione        Int?
+  dataValutazione    String?  @map("data_valutazione")
+  dataCreazione      String?  @map("data_creazione")
+  dataAggiornamento  String?  @map("data_aggiornamento")
+
+  ticketComments  TicketComment[]
+  ticketStateLogs TicketStateLog[]
+
+  @@map("tickets")
+}
+
+model TicketComment {
+  id             Int    @id @default(autoincrement())
+  ticketId       Int    @map("ticket_id")
+  testo          String
+  autoreUsername String @map("autore_username")
+  creatoIl       String @map("creato_il")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_comments")
+}
+
+model TicketStateLog {
+  id         Int     @id @default(autoincrement())
+  ticketId   Int     @map("ticket_id")
+  statoNuovo String  @map("stato_nuovo")
+  cambiatoIl String  @map("cambiato_il")
+  cambiatoDa String? @map("cambiato_da")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_state_logs")
+}

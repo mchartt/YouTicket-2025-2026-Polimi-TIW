@@ -1,0 +1,48 @@
+Sistema di Ticketing / Helpdesk
+
+Introduzione al progetto 
+
+Un sistema di ticketing permette di gestire richieste di assistenza, segnalazioni, bug, problemi tecnici o domande rivolte a un gruppo di operatori. Il progetto consiste nel realizzare una piattaforma web in cui gli utenti possano aprire ticket e seguirne l'evoluzione, mentre gli operatori possano assegnarli, rispondere e modificarne lo stato.
+
+Livello 1 — Apertura e gestione ticket base
+
+L'applicazione deve permettere agli utenti di:
+
+    registrarsi e accedere;
+    aprire un ticket con titolo, descrizione e categoria;
+    visualizzare l'elenco dei propri ticket;
+    visualizzare il dettaglio di un ticket;
+    aggiungere commenti ai propri ticket;
+    vedere lo stato del ticket.
+
+Gli operatori devono poter:
+
+    visualizzare tutti i ticket;
+    rispondere ai ticket;
+    modificare lo stato del ticket, ad esempio aperto, in lavorazione, risolto, chiuso.
+
+Esempio indicativo
+
+Sara apre un ticket con titolo “Problema accesso piattaforma”. Un operatore legge il ticket, risponde chiedendo ulteriori informazioni e cambia lo stato in “in lavorazione”. Sara vede la risposta e aggiunge un commento.
+
+Obiettivo funzionale
+
+Realizzare un sistema base di assistenza con utenti, operatori, ticket, commenti e stati.
+
+
+Livello 2 — Priorità, assegnazione e filtri
+
+L'applicazione deve aggiungere:
+
+    priorità del ticket: bassa, media, alta, urgente;
+    assegnazione di un ticket a uno specifico operatore (per esempio a quello con meno ticket assegnati);
+    storico delle modifiche di stato;
+    filtri per categoria, stato, priorità e operatore assegnato;
+    dashboard per operatori con conteggi dei ticket aperti, in lavorazione e risolti;
+    possibilità per l'utente di valutare la risposta ricevuta o indicare se il problema è stato risolto.
+
+Esempio indicativo
+
+Un ticket urgente viene assegnato all'operatore Luca. Nella dashboard di Luca compare tra i ticket ad alta priorità. Quando Luca lo risolve, il sistema registra nello storico il cambio di stato e l'utente può confermare la risoluzione.
+Obiettivo funzionale
+Introdurre un workflow più realistico, con assegnazioni, priorità, tracciamento delle modifiche e strumenti di controllo per gli operatori.

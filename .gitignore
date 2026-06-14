@@ -1,0 +1,21 @@
+# Dipendenze e rumore locale
+node_modules/
+**/node_modules/
+
+# Build output
+ticketing-frontend/dist/
+ticketing-frontend/.angular/
+
+# Backend build e DB locale
+ticketing-backend/dist/
+ticketing-backend/data/
+
+# IDE
+.idea/
+**/.idea/
+.vscode/
+
+# Robaccia
+.idea/
+.vscode/
+.vercel
