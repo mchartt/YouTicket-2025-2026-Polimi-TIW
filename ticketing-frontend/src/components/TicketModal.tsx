@@ -27,32 +27,27 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const [editForm, setEditForm] = useState({ titolo: "", descrizione: "", categoria: "" });
 
 
-  //PER IL POLLING AVREI POTUTO USARE ANCHE WEBSOCKET MA PER UN PROGETTINO PICCOLO
-  //COME QUESTO NON L'HO RITENUTO NECESSARIO, MEGLIO AGGIORNAMENTO OGNI MEZZO SECONDO
-  //SE E SOLO SE I DATI SONO CAMBIATI.
+  //carico i dettagli del ticket e poi resto in ascolto dei nuovi commenti via WebSocket (niente più polling)
   useEffect(() => {
     if (isNuovo) return; // se è un nuovo ticket non devo fare la richiesta al server
-    api.ticketDetails(id) //altrimenti faccio la richiesta al server per prendere i dettagli del ticket
+    api.ticketDetails(id) //richiesta iniziale per prendere i dettagli del ticket
       .then(setTicket)
       .catch(() => { // se la richiesta fallisce mostro un messaggio di errore e chiudo il modal
         notify("Errore nel caricamento");
         onClose();
       });
-    // ogni mezzo secondo controllo se e arrivato un commento nuovo e aggiorno solo la conversazione
-    const intervallo = setInterval(async () => {
-      try {
-        const aggiornato = await api.ticketDetails(id); // prendo i dati aggiornati del ticket
-        setTicket(prev =>
-          //prendo i commenti precedenti, i commenti successivi, li cofronto se sono diverso aggiorno
-          prev && aggiornato.commenti.length !== prev.commenti.length
-            ? { ...prev, commenti: aggiornato.commenti }
-            : prev
-        );
-      } catch {
-        // se la rete cade lascio com'e e riprovo al giro dopo
-      }
-    }, 1000); //polling ogni mezzo secondo per aggiornare la conversazione in tempo reale
-    return () => clearInterval(intervallo);
+
+    //apro la WebSocket e dico al server quale chat sto seguendo
+    const socket = new WebSocket(api.wsUrl());
+    socket.onopen = () => socket.send(JSON.stringify({ ticketId: id }));
+    socket.onmessage = e => {
+      const commento = JSON.parse(e.data); //il server mi manda il nuovo commento
+      setTicket(prev => {
+        if (!prev || prev.commenti.some(c => c.id === commento.id)) return prev; //evito i doppioni
+        return { ...prev, commenti: [...prev.commenti, commento] };
+      });
+    };
+    return () => socket.close(); //chiudo la WebSocket quando esco dal ticket
   }, [id]);
 
   //ricarico i dati del ticket ad ogni operazione
@@ -87,9 +82,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     if (!commento.trim()) return; //se il commento è vuoto non faccio nulla
     try { //RICORDATI: inizialmente il commento parte vuoto poi viene aggiornato al click del bottone invia, se il commento è solo spazi vuol dire che è vuoto e non lo invio
       await api.addComment(id, { testo: commento, autoreUsername: user.username }); //salvo nel backend
-      setCommento(""); //pulisco il commento dopo l'invio
-      notify("Commento aggiunto"); //mando a schermo una notifica di successo
-      ricarica(); //ricarico i dati del ticket per aggiornare la conversazione con il nuovo commento
+      setCommento(""); //pulisco il commento dopo l'invio: il commento comparirà via WebSocket
     } catch (err: any) {
       notify(err.message); //se c'è un errore mostro il messaggio di errore
     }

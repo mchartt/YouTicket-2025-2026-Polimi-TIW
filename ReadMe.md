@@ -12,7 +12,7 @@ IMPORTANTE: Per effettuare un test rapido dell'applicazione loggatevi sul sito c
 
 ## Di cosa si tratta
 
-YouTicket e' una piccola applicazione web per gestire ticket di supporto IT. L'idea e' semplice: c'e' chi apre una richiesta (l'utente) e chi la prende in carico e la risolve (il tecnico).
+YouTicket e' una piccola applicazione web per gestire ticket di supporto ed assistenza IT. L'idea e' semplice: c'e' chi apre una richiesta (l'utente) e chi la prende in carico e la risolve (il tecnico).
 
 | Cartella | Cosa c'e' |
 |----------|-----------|
@@ -99,41 +99,56 @@ YouTicket-2025-2026-Polimi-Project/
 
 ## Funzionalita implementate
 
-**Utente:**
-- Registrazione e login
-- Apertura ticket con titolo, descrizione e categoria
-- Visualizzazione dei propri ticket
-- Dettaglio ticket con stato visibile
-- Commenti sui propri ticket / Chat con il tecnico, aggiornata da sola mentre il ticket è aperto
-- Feedback con voto 1-5 sui ticket risolti o chiusi
+Le funzionalita sono divise per livello come da traccia. Il tick indica che la funzionalita e' completata.
 
-**Tecnico:**
-- Registrazione e login
-- Vista di tutti i ticket e coda dei ticket non assegnati
-- Presa in carico manuale
-- Assegnazione automatica al tecnico con meno ticket attivi
-- Cambio stato: preso in carico, in lavorazione, risolto, chiuso
-- Cambio priorita: bassa, media, alta, urgente
-- Filtri per categoria, stato, priorita e tecnico assegnato
-- Storico dei cambi stato nel dettaglio ticket
-- Dashboard con conteggi ticket aperti, in lavorazione e risolti
-- Gestione categorie
-- Commenti sui propri ticket / Chat con l'utente, aggiornata da sola mentre il ticket è aperto
+### Livello 1: apertura e gestione ticket base
 
-**Tutti i requisiti di livello 1 e 2 del progetto sono stati completati.**
+Utente:
+- Registrazione e accesso ✓
+- Apertura di un ticket con titolo, descrizione e categoria ✓
+- Elenco dei propri ticket ✓
+- Dettaglio di un ticket ✓
+- Commenti sui propri ticket ✓
+- Stato del ticket sempre visibile ✓
 
-**Funzionalità extra oltre la traccia per il livello 3:** 
-1. chat real-time utente/tecnico
-2. gestione categorie con attivazione/eliminazione
-3. auto-assegnazione attivabile per tecnico
-4. statistiche feedback (getStatsFeedback)
-5. username generati automaticamente
-6. validazione email per ruolo (@polimi.it vs @service.polimi.it)
-7. Docker/CI.
+Tecnico:
+- Visualizzazione di tutti i ticket ✓
+- Risposta ai ticket tramite commenti ✓
+- Modifica dello stato del ticket: aperto, preso in carico, in lavorazione, risolto, chiuso ✓
+
+### Livello 2: priorita, assegnazione e filtri
+
+- Priorita del ticket: bassa, media, alta, urgente ✓
+- Assegnazione a uno specifico tecnico, con auto-assegnazione al tecnico con meno ticket attivi e presa in carico manuale ✓
+- Storico delle modifiche di stato ✓
+- Filtri per categoria, stato, priorita e tecnico assegnato ✓
+- Dashboard tecnico con conteggi dei ticket aperti, in lavorazione e risolti ✓
+- Valutazione della risoluzione da parte dell'utente con feedback da 1 a 5 sui ticket risolti o chiusi ✓
+
+### Livello 3: notifiche, real-time o knowledge base
+
+- Aggiornamenti in tempo reale dei commenti tramite chat utente/tecnico su WebSocket ✓
+- Caricamento di allegati ai ticket, con download ed eliminazione ✓
+- Statistiche sui feedback ricevuti ✓
+- Notifiche email quando un ticket riceve una risposta ✗
+- Knowledge base con articoli di supporto ✗
+- Suggerimento automatico di articoli correlati ✗
+- Statistiche sui tempi medi di risposta e risoluzione ✗
+
+I requisiti dei livelli 1 e 2 sono completati per intero. Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le statistiche sui feedback.
+
+### Funzionalita aggiuntive oltre la traccia
+
+- Auto-assegnazione attivabile o disattivabile dal singolo tecnico ✓
+- Modifica e archiviazione dei ticket ✓
+- Username generati automaticamente in fase di registrazione ✓
+- Validazione delle email per ruolo: @polimi.it per gli utenti, @service.polimi.it per i tecnici ✓
+- Deploy con Docker Compose e pipeline CI ✓
+
 ---
 
 ## Note sul progetto
 
 Per provare in fretta l'app puoi usare le credenziali di test scritte all'inizio di questo file. Per vedere liste, ticket e commenti serve comunque avere il backend avviato.
 
-Per quanto riguarda la sicurezza: questo e' un progetto didattico, non un sistema in produzione. Le limitazioni principali sono documentate nel README del backend.
+Per quanto riguarda la sicurezza: questo e' un progetto didattico, non è stato quindi implementato JWT. Le limitazioni principali sono documentate nel README del backend.

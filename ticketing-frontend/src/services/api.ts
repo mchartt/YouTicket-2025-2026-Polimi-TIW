@@ -50,6 +50,8 @@ export const api = {
   addAttachment:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
   deleteAttachment:         (id: number, allegatoId: number) => req(`/tickets/${id}/allegati/${allegatoId}`, "DELETE"),
   attachmentUrl:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
+  wsUrl:                     () => BASE.replace(/^http/, "ws").replace(/\/api\/?$/, ""), //da http(s)://host/api a ws(s)://host per la chat
+
   sendFeedback:             (id: number, valutazione: number) => req(`/tickets/${id}/feedback`, "POST", { valutazione }),
   stats:                    (tecnico = "") => req(`/tickets/stats/feedback${tecnico ? "?tecnico=" + tecnico : ""}`),
   toggleAutoAssegnazione:   (username: string, attiva: boolean) => req("/auth/auto-assegnazione", "PATCH", { tecnicoUsername: username, attiva }),

@@ -4,6 +4,7 @@ import cors from "cors";
 import { db, bootstrapDb } from "./config/db";
 import { routes } from "./routes";
 import { errorHandler } from "./errors/errorHandler"; //importo il middleware globale per gestire gli errori
+import { initWs } from "./websocket-server"; //server WebSocket per la chat in tempo reale
 
 async function waitForDatabase(maxRetries = 30) { //provo 30 volte a connettermi al db se non risponde chiudo
   for (let i = 0; i < maxRetries; i++) {
@@ -40,6 +41,7 @@ async function main() { //mentre aspetto che il db sia pronto porto avanti altre
 
   const port = process.env.PORT || 8080; //prendo la porta dalle variabili d'ambiente se non è definita uso 8080
   const server = app.listen(port, () => console.log(`API Listening on ${port}`)); //avvio del server con utilizzo porta in modo dinamico
+  initWs(server); //la chat usa WebSocket sullo stesso server/porta
 
   process.on("SIGINT", async () => { await db.$disconnect(); server.close(); }); //per disconnettersi dal db e chiudere il server
 }

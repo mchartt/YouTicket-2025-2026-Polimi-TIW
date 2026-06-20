@@ -1,48 +1,83 @@
-Sistema di Ticketing / Helpdesk
+SISTEMA DI TICKETING / HELPDESK
 
-Introduzione al progetto 
 
-Un sistema di ticketing permette di gestire richieste di assistenza, segnalazioni, bug, problemi tecnici o domande rivolte a un gruppo di operatori. Il progetto consiste nel realizzare una piattaforma web in cui gli utenti possano aprire ticket e seguirne l'evoluzione, mentre gli operatori possano assegnarli, rispondere e modificarne lo stato.
+INTRODUZIONE AL PROGETTO
 
-Livello 1 — Apertura e gestione ticket base
+Un sistema di ticketing permette di gestire richieste di assistenza,
+segnalazioni, bug, problemi tecnici o domande rivolte a un gruppo di operatori.
+Il progetto consiste nel realizzare una piattaforma web in cui gli utenti
+possano aprire ticket e seguirne l'evoluzione, mentre gli operatori possano
+assegnarli, rispondere e modificarne lo stato.
+
+
+====================================================================
+LIVELLO 1 - APERTURA E GESTIONE TICKET BASE
+====================================================================
 
 L'applicazione deve permettere agli utenti di:
-
-    registrarsi e accedere;
-    aprire un ticket con titolo, descrizione e categoria;
-    visualizzare l'elenco dei propri ticket;
-    visualizzare il dettaglio di un ticket;
-    aggiungere commenti ai propri ticket;
-    vedere lo stato del ticket.
+  - registrarsi e accedere;
+  - aprire un ticket con titolo, descrizione e categoria;
+  - visualizzare l'elenco dei propri ticket;
+  - visualizzare il dettaglio di un ticket;
+  - aggiungere commenti ai propri ticket;
+  - vedere lo stato del ticket.
 
 Gli operatori devono poter:
-
-    visualizzare tutti i ticket;
-    rispondere ai ticket;
-    modificare lo stato del ticket, ad esempio aperto, in lavorazione, risolto, chiuso.
+  - visualizzare tutti i ticket;
+  - rispondere ai ticket;
+  - modificare lo stato del ticket, ad esempio aperto, in lavorazione,
+    risolto, chiuso.
 
 Esempio indicativo
-
-Sara apre un ticket con titolo “Problema accesso piattaforma”. Un operatore legge il ticket, risponde chiedendo ulteriori informazioni e cambia lo stato in “in lavorazione”. Sara vede la risposta e aggiunge un commento.
+  Sara apre un ticket con titolo "Problema accesso piattaforma". Un operatore
+  legge il ticket, risponde chiedendo ulteriori informazioni e cambia lo stato
+  in "in lavorazione". Sara vede la risposta e aggiunge un commento.
 
 Obiettivo funzionale
+  Realizzare un sistema base di assistenza con utenti, operatori, ticket,
+  commenti e stati.
 
-Realizzare un sistema base di assistenza con utenti, operatori, ticket, commenti e stati.
 
-
-Livello 2 — Priorità, assegnazione e filtri
+====================================================================
+LIVELLO 2 - PRIORITA, ASSEGNAZIONE E FILTRI
+====================================================================
 
 L'applicazione deve aggiungere:
-
-    priorità del ticket: bassa, media, alta, urgente;
-    assegnazione di un ticket a uno specifico operatore (per esempio a quello con meno ticket assegnati);
-    storico delle modifiche di stato;
-    filtri per categoria, stato, priorità e operatore assegnato;
-    dashboard per operatori con conteggi dei ticket aperti, in lavorazione e risolti;
-    possibilità per l'utente di valutare la risposta ricevuta o indicare se il problema è stato risolto.
+  - priorita del ticket: bassa, media, alta, urgente;
+  - assegnazione di un ticket a uno specifico operatore (per esempio a quello
+    con meno ticket assegnati);
+  - storico delle modifiche di stato;
+  - filtri per categoria, stato, priorita e operatore assegnato;
+  - dashboard per operatori con conteggi dei ticket aperti, in lavorazione
+    e risolti;
+  - possibilita per l'utente di valutare la risposta ricevuta o indicare se
+    il problema e stato risolto.
 
 Esempio indicativo
+  Un ticket urgente viene assegnato all'operatore Luca. Nella dashboard di Luca
+  compare tra i ticket ad alta priorita. Quando Luca lo risolve, il sistema
+  registra nello storico il cambio di stato e l'utente puo confermare la
+  risoluzione.
 
-Un ticket urgente viene assegnato all'operatore Luca. Nella dashboard di Luca compare tra i ticket ad alta priorità. Quando Luca lo risolve, il sistema registra nello storico il cambio di stato e l'utente può confermare la risoluzione.
 Obiettivo funzionale
-Introdurre un workflow più realistico, con assegnazioni, priorità, tracciamento delle modifiche e strumenti di controllo per gli operatori.
+  Introdurre un workflow piu realistico, con assegnazioni, priorita,
+  tracciamento delle modifiche e strumenti di controllo per gli operatori.
+
+
+====================================================================
+LIVELLO 3 - NOTIFICHE, REAL-TIME O KNOWLEDGE BASE
+====================================================================
+
+Possibili estensioni di Livello 3:
+  - notifiche email quando un ticket riceve una risposta;
+  - aggiornamenti in tempo reale dei commenti;
+  - caricamento di allegati ai ticket;
+  - knowledge base con articoli di supporto;
+  - suggerimento automatico di articoli correlati in base alla categoria o
+    alle parole chiave del ticket;
+  - statistiche sui tempi medi di risposta e risoluzione.
+
+Obiettivo funzionale
+  Trasformare il sistema in una piattaforma di assistenza piu completa,
+  introducendo notifiche, collaborazione dinamica, gestione documentale o
+  analisi del servizio.

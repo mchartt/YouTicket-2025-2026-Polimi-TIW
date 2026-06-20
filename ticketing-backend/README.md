@@ -133,13 +133,20 @@ Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` che 
 |--------|------|---------|
 | `GET` | `/search` | Lista ticket con filtri (`categoria`, `stato`, `priorita`, `tecnico`, `autore`) |
 | `GET` | `/stats/feedback` | Statistiche dei feedback |
+| `GET` | `/:id/allegati/:allegatoId/download` | Scarica un allegato |
 | `GET` | `/:id` | Dettaglio di un ticket |
-| `POST` | `/` | Crea un ticket (risponde **201**) |
+| `POST` | `/` | Crea un ticket (risponde 201) |
 | `PATCH` | `/:id/priorita` | Cambia la priorità |
 | `PATCH` | `/:id/stato` | Cambia lo stato |
 | `PATCH` | `/:id/assegna` | Presa in carico / assegnazione |
-| `POST` | `/:id/commenti` | Aggiunge un commento |
+| `PATCH` | `/:id/archivia` | Archivia un ticket |
+| `PATCH` | `/:id` | Modifica titolo, descrizione e categoria |
+| `POST` | `/:id/commenti` | Aggiunge un commento (notificato in tempo reale via WebSocket) |
+| `POST` | `/:id/allegati` | Aggiunge un allegato |
+| `DELETE` | `/:id/allegati/:allegatoId` | Elimina un allegato |
 | `POST` | `/:id/feedback` | Invia un feedback |
+
+Oltre alle route HTTP, il backend espone un server WebSocket sullo stesso host e porta: alla connessione il client indica quale ticket sta seguendo e riceve in tempo reale i nuovi commenti di quella conversazione.
 
 ---
 
@@ -154,10 +161,16 @@ Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` che 
 
 ## Limitazioni di sicurezza (importante)
 
-Questo backend è pensato per un corso universitario, non per il business ovviamente. Alcune cose che mancano rispetto a un sistema reale:
+Questo backend è pensato per un corso universitario, non per il business ovviamente.
+
+Sicurezza utilizzata:
+
+- Le **password sono hashate con bcrypt**.
+
+Alcune cose che mancano rispetto a un sistema reale:
 
 - **Nessuna autenticazione basata su token**: le azioni che richiedono un utente specifico (es. chi prende in carico un ticket) ricevono lo username nel body della richiesta. Non c'è verifica crittografica dell'identità — chiunque raggiunga gli endpoint può impersonare qualsiasi utente.
-- Le **password sono hashate con bcrypt**, quello è fatto bene.
+
 - Il **CORS** in sviluppo è limitato a `localhost:4200`. Con `CORS_ORIGIN=*` si apre a tutti (solo per test locali).
 
 Per un sistema reale servirebbero JWT o sessioni server-side con cookie `httpOnly`.

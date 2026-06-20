@@ -45,7 +45,8 @@ L'interfaccia usa Bootstrap 5, importato in `src/main.tsx`. Non c'è un file CSS
 
 - Creazione ticket con titolo, descrizione e categoria.
 - Priorita gestita dal backend alla creazione e modificabile dal tecnico.
-- Commenti utente/tecnico nel dettaglio ticket, mostrati a fumetto: i miei a sinistra in celeste, quelli dell'altra persona a destra. La conversazione sta in un riquadro che scorre da solo e si porta in fondo quando arriva un messaggio. Ogni mezzo secondo la modale controlla se è arrivato un commento nuovo e in quel caso aggiorna la lista dei commenti.
+- Commenti utente/tecnico nel dettaglio ticket, mostrati a fumetto: i miei a sinistra in celeste, quelli dell'altra persona a destra. La conversazione sta in un riquadro che scorre da solo e si porta in fondo quando arriva un messaggio. La chat e' in tempo reale: la modale apre una WebSocket sul ticket aperto e i nuovi commenti compaiono appena il server li trasmette, senza polling.
+- Allegati ai ticket: caricamento, download ed eliminazione.
 - Cambio stato tecnico fino a `RISOLTO`.
 - Storico cambi stato nel dettaglio.
 - Filtri tecnico per categoria, stato, priorita e tecnico assegnato.
