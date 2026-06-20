@@ -7,7 +7,6 @@ export const authRoutes = Router(); //creo un'istanza di Router per definire le 
 
 //DEFINIZIONE ROUTE REGISTRAZIONE
 authRoutes.post("/register", asyncHandler(authController.register));
-authRoutes.get("/preview-username", asyncHandler(authController.previewUsername));
 authRoutes.post("/login", asyncHandler(authController.login));
 
 //DEFINIZIONE ROUTE AUTO-ASSEGNAZIONE

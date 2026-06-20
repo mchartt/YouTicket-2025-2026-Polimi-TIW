@@ -48,7 +48,6 @@ export const api = {
   takeCharge:               (id: number, tecnico: string) => req(`/tickets/${id}/assegna`, "PATCH", { tecnicoUsername: tecnico }),
   addComment:               (id: number, b: any) => req(`/tickets/${id}/commenti`, "POST", b),
   addAttachment:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
-  deleteAttachment:         (id: number, allegatoId: number) => req(`/tickets/${id}/allegati/${allegatoId}`, "DELETE"),
   attachmentUrl:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
   wsUrl:                     () => BASE.replace(/^http/, "ws").replace(/\/api\/?$/, ""), //da http(s)://host/api a ws(s)://host per la chat
 

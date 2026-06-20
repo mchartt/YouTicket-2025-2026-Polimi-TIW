@@ -3,7 +3,6 @@ export interface User {
   username: string;
   ruolo: "UTENTE" | "TECNICO";
   nome?: string;
-  email?: string;
   autoAssegnazione?: boolean;
 }
 

@@ -22,11 +22,6 @@ async function prossimoUsername(nome: string, cognome: string, ruolo: string) { 
   return username;
 }
 
-export async function previewUsername(nome: string, cognome: string, ruolo: string) {
-  if (!clean(nome) || !clean(cognome)) return { username: ruolo === "TECNICO" ? "tech.nome.cognome" : "nome.cognome" }; //se non ho nome o cognome, uso il nome di default
-  return { username: await prossimoUsername(nome, cognome, ruolo) };
-}
-
 export async function register(data: z.infer<typeof registerZ>) { //mi assicuro che i dati in ingresso siano validi e seguano lo schema già definito
   const validEmail = data.ruolo === "TECNICO" ? /^[a-z0-9.]+@service\.polimi\.it$/i.test(data.email) : /^[a-z0-9.]+@(mail\.)?polimi\.it$/i.test(data.email);
   if (!validEmail) throw new ApiError(400, "Formato email non valido per il ruolo");

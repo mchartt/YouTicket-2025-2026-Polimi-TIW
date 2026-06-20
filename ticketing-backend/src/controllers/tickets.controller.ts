@@ -9,7 +9,6 @@ export const createTicket = async (req: any, res: any) => res.status(201).json(a
 export const modificaTicket = async (req: any, res: any) => res.json(await ticketsService.modificaTicket(+req.params.id, req.body, req.body.autore)); //per modificare un ticket entro 15 minuti
 export const archiviaTicket = async (req: any, res: any) => res.json(await ticketsService.archiviaTicket(+req.params.id)); //per archiviare un ticket risolto
 export const aggiungiAllegato = async (req: any, res: any) => res.status(201).json(await ticketsService.aggiungiAllegato(+req.params.id, req.body)); //per caricare un allegato
-export const eliminaAllegato = async (req: any, res: any) => { await ticketsService.eliminaAllegato(+req.params.id, +req.params.allegatoId); res.sendStatus(204); }; //per cancellare un allegato
 export const scaricaAllegato = async (req: any, res: any) => { //per scaricare un allegato con il giusto tipo di contenuto
   const a = await ticketsService.getAllegato(+req.params.allegatoId);
   const base64 = a.dati.split(",").pop() || ""; //rimuovo il prefisso "data:...;base64," dal data URL

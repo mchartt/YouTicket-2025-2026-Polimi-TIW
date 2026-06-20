@@ -114,7 +114,6 @@ Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` che 
 | Metodo | Path | Cosa fa |
 |--------|------|---------|
 | `POST` | `/register` | Registrazione utente o tecnico |
-| `GET` | `/preview-username` | Anteprima dello username generato automaticamente |
 | `POST` | `/login` | Login |
 | `PATCH` | `/auto-assegnazione` | Attiva/disattiva l'auto-assegnazione per un tecnico |
 
@@ -143,7 +142,6 @@ Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` che 
 | `PATCH` | `/:id` | Modifica titolo, descrizione e categoria |
 | `POST` | `/:id/commenti` | Aggiunge un commento (notificato in tempo reale via WebSocket) |
 | `POST` | `/:id/allegati` | Aggiunge un allegato |
-| `DELETE` | `/:id/allegati/:allegatoId` | Elimina un allegato |
 | `POST` | `/:id/feedback` | Invia un feedback |
 
 Oltre alle route HTTP, il backend espone un server WebSocket sullo stesso host e porta: alla connessione il client indica quale ticket sta seguendo e riceve in tempo reale i nuovi commenti di quella conversazione.

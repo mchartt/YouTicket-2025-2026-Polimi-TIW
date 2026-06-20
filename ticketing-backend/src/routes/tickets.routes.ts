@@ -17,5 +17,4 @@ ticketsRoutes.patch("/:id/archivia", asyncHandler(ticketsController.archiviaTick
 ticketsRoutes.patch("/:id", asyncHandler(ticketsController.modificaTicket));
 ticketsRoutes.post("/:id/commenti", asyncHandler(ticketsController.aggiungiCommento));
 ticketsRoutes.post("/:id/allegati", asyncHandler(ticketsController.aggiungiAllegato));
-ticketsRoutes.delete("/:id/allegati/:allegatoId", asyncHandler(ticketsController.eliminaAllegato));
 ticketsRoutes.post("/:id/feedback", asyncHandler(ticketsController.inviaFeedback));

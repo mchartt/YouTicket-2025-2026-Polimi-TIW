@@ -147,12 +147,6 @@ export async function aggiungiAllegato(ticketId: number, data: any) { //per alle
   return { id: a.id, nomeFile: a.nomeFile, tipo: a.tipo, creatoIl: a.creatoIl }; //rispondo senza i dati pesanti del file
 }
 
-export async function eliminaAllegato(ticketId: number, id: number) { //per cancellare un allegato di un ticket
-  const a = await db.allegato.findUnique({ where: { id } });
-  if (!a || a.ticketId !== ticketId) throw new ApiError(404, "Allegato non trovato"); //l'allegato deve appartenere a questo ticket
-  await db.allegato.delete({ where: { id } });
-}
-
 export async function getAllegato(id: number) { //recupero un allegato per il download
   const a = await db.allegato.findUnique({ where: { id } });
   if (!a) throw new ApiError(404, "Allegato non trovato");
