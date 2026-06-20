@@ -1,0 +1,253 @@
+<%- include("../partials/intestazione") %>
+
+<%
+  // --- flag/autorizzazioni identici a TicketModal.tsx ---
+  // COLORE_STATO e etichettaStato arrivano da res.locals (condivisi con la dashboard)
+  const risolto = ticket.stato === "RISOLTO";
+  // SE SONO UN UTENTE, AUTORE, TICKET RISOLTO E NON ANCORA VALUTATO -> posso lasciare la valutazione
+  const flagSePossoLasciareValutazione = user.ruolo === "UTENTE" && ticket.autore === user.username && risolto && !ticket.valutazione;
+  const tecnicoAssegnato = user.ruolo === "TECNICO" && ticket.tecnico === user.username;
+  // SE SONO TECNICO, TICKET IN ATTESA E SENZA TECNICO -> posso prenderlo in carico
+  const flagPuoPrendereInCarico = user.ruolo === "TECNICO" && ticket.stato === "IN_ATTESA" && !ticket.tecnico;
+  // SE SONO L'AUTORE E NON SONO PASSATI 15 MINUTI -> posso modificare
+  const entroQuindiciMinuti = (Date.now() - new Date(ticket.dataCreazione).getTime()) < 15 * 60 * 1000;
+  const flagPuoModificare = user.ruolo === "UTENTE" && ticket.autore === user.username && entroQuindiciMinuti;
+  // chi può scrivere in conversazione
+  const puoScrivere = (user.ruolo === "UTENTE" || tecnicoAssegnato) && !risolto;
+%>
+
+<%# stessa struttura del modal "dettaglio" di TicketModal.tsx: overlay scuro + card centrata %>
+<div class="modal d-block" id="backdrop" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 1000px;">
+    <div class="modal-content shadow-lg ticket-detail">
+
+    <div class="modal-header bg-light">
+      <h3 class="h5 m-0">#<%= ticket.id %> - <%= ticket.titolo %></h3>
+      <a href="<%= u('/') %>" class="btn-close" aria-label="Chiudi"></a>
+    </div>
+
+    <div class="modal-body p-0">
+      <div class="row g-0 h-100">
+
+        <%# ---- COLONNA SINISTRA: DETTAGLI ---- %>
+        <div class="col-md-7 h-100 overflow-auto p-3 border-end">
+
+          <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+            <span class="badge rounded-pill text-capitalize <%= COLORE_STATO[ticket.stato] %>"><%= etichettaStato(ticket.stato) %></span>
+            <% if (ticket.priorita) { %>
+              <span class="badge rounded-pill text-capitalize bg-info-subtle text-info-emphasis"><%= ticket.priorita %></span>
+            <% } %>
+            <% if (risolto && !ticket.archiviato) { %>
+              <form method="post" action="<%= u('/ticket/' + ticket.id + '/archivia') %>" class="ms-auto">
+                <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fa-solid fa-box-archive me-2"></i>Archivia</button>
+              </form>
+            <% } %>
+          </div>
+
+          <% if (editMode && flagPuoModificare) { %>
+            <%# ---- MODALITÀ MODIFICA (entro 15 minuti) ---- %>
+            <form method="post" action="<%= u('/ticket/' + ticket.id + '/modifica') %>" class="card bg-light mb-3">
+              <div class="card-body">
+                <h5 class="h6 mb-3"><i class="fa-solid fa-pen me-2"></i>Modifica richiesta</h5>
+                <label class="form-label small fw-bold mb-1">Titolo</label>
+                <input required maxlength="60" class="form-control mb-3" name="titolo" value="<%= ticket.titolo %>">
+                <label class="form-label small fw-bold mb-1">Categoria</label>
+                <select required class="form-select mb-3" name="categoria">
+                  <% categorie.forEach(c => { %>
+                    <option value="<%= c.nome %>" <%= c.nome === ticket.categoria ? "selected" : "" %>><%= c.nome %></option>
+                  <% }) %>
+                </select>
+                <label class="form-label small fw-bold mb-1">Descrizione</label>
+                <textarea required maxlength="200" rows="4" class="form-control mb-1" name="descrizione" id="descrizione"><%= ticket.descrizione %></textarea>
+                <div class="form-text text-end mb-3"><span id="contatore"><%= ticket.descrizione.length %></span>/200</div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk me-2"></i>Salva</button>
+                  <a href="<%= u('/ticket/' + ticket.id) %>" class="btn btn-outline-secondary btn-sm">Annulla</a>
+                </div>
+              </div>
+            </form>
+          <% } else { %>
+            <%# ---- INFO TICKET ---- %>
+            <div class="card bg-light mb-3"><div class="card-body py-2">
+              <p class="mb-1"><b>Categoria:</b> <%= ticket.categoria %> | <b>Autore:</b> <%= ticket.autore %> | <b>Tecnico:</b> <%= ticket.tecnico || "Non assegnato" %></p>
+              <p class="mb-0 small text-muted">Aperto il <%= new Date(ticket.dataCreazione).toLocaleString("it-IT") %></p>
+              <% if (flagPuoModificare) { %>
+                <a href="<%= u('/ticket/' + ticket.id + '?modifica=1') %>" class="btn btn-outline-primary btn-sm mt-2"><i class="fa-solid fa-pen me-2"></i>Modifica</a>
+              <% } %>
+            </div></div>
+
+            <%# ---- DESCRIZIONE ---- %>
+            <div class="card bg-light mb-3"><div class="card-body py-2">
+              <p class="mb-1"><b>Descrizione:</b></p>
+              <p class="mb-0" style="white-space: pre-wrap;"><%= ticket.descrizione %></p>
+            </div></div>
+          <% } %>
+
+          <%# ---- ALLEGATI (sola lettura, download via API) ---- %>
+          <div class="card bg-light mb-3"><div class="card-body py-2">
+            <p class="mb-2"><b><i class="fa-solid fa-paperclip me-2"></i>Allegati (<%= ticket.allegati.length %>/3)</b></p>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <% if (ticket.allegati.length === 0) { %><span class="small text-muted">Nessun allegato.</span><% } %>
+              <% ticket.allegati.forEach(a => { %>
+                <span class="d-inline-flex align-items-center gap-2 border rounded-pill bg-white ps-3 pe-2 py-1">
+                  <a class="small text-decoration-none text-truncate" style="max-width:140px" href="/api/tickets/<%= ticket.id %>/allegati/<%= a.id %>/download?sid=<%= sid %>" target="_blank" rel="noreferrer" title="<%= a.nomeFile %>"><i class="fa-solid fa-download me-2"></i><%= a.nomeFile %></a>
+                </span>
+              <% }) %>
+            </div>
+          </div></div>
+
+          <%# ---- AZIONI TECNICO: prendi in carico, stato, priorità ---- %>
+          <% if (flagPuoPrendereInCarico || (tecnicoAssegnato && !risolto)) { %>
+            <div class="card bg-light mb-3"><div class="card-body">
+              <% if (flagPuoPrendereInCarico) { %>
+                <form method="post" action="<%= u('/ticket/' + ticket.id + '/assegna') %>">
+                  <button class="btn btn-primary fw-bold" type="submit"><i class="fa-solid fa-hand me-2"></i>Prendi in carico</button>
+                </form>
+              <% } %>
+              <% if (tecnicoAssegnato && !risolto) { %>
+                <div class="row g-2 <%= flagPuoPrendereInCarico ? "mt-1" : "" %>">
+                  <div class="col-md">
+                    <% if (ticket.stato === "PRESO_IN_CARICO") { %>
+                      <form method="post" action="<%= u('/ticket/' + ticket.id + '/stato') %>">
+                        <input type="hidden" name="stato" value="IN_LAVORAZIONE">
+                        <button class="btn btn-outline-primary w-100" type="submit" <%= !ticket.priorita ? "disabled" : "" %>>In lavorazione<%= !ticket.priorita ? " (assegna priorità)" : "" %></button>
+                      </form>
+                    <% } else if (ticket.stato === "IN_LAVORAZIONE") { %>
+                      <form method="post" action="<%= u('/ticket/' + ticket.id + '/stato') %>">
+                        <input type="hidden" name="stato" value="RISOLTO">
+                        <button class="btn btn-outline-success w-100" type="submit">Risolto</button>
+                      </form>
+                    <% } %>
+                  </div>
+                  <div class="col-md">
+                    <form method="post" action="<%= u('/ticket/' + ticket.id + '/priorita') %>" class="d-flex gap-2">
+                      <select class="form-select" name="priorita" required>
+                        <option value="" disabled <%= !ticket.priorita ? "selected" : "" %>>Assegna priorità</option>
+                        <option value="BASSA" <%= ticket.priorita === "BASSA" ? "selected" : "" %>>Bassa</option>
+                        <option value="MEDIA" <%= ticket.priorita === "MEDIA" ? "selected" : "" %>>Media</option>
+                        <option value="ALTA" <%= ticket.priorita === "ALTA" ? "selected" : "" %>>Alta</option>
+                        <option value="URGENTE" <%= ticket.priorita === "URGENTE" ? "selected" : "" %>>Urgente</option>
+                      </select>
+                      <button class="btn btn-primary" type="submit">Salva</button>
+                    </form>
+                  </div>
+                </div>
+              <% } %>
+            </div></div>
+          <% } %>
+
+          <%# ---- VALUTAZIONE ---- %>
+          <div class="card bg-light mb-3"><div class="card-body d-flex align-items-center gap-2 flex-wrap">
+            <b>Valutazione:</b>
+            <% if (ticket.valutazione) { %>
+              <span>
+                <% [1,2,3,4,5].forEach(n => { %><span style="font-size:22px; color: <%= n <= ticket.valutazione ? "var(--bs-warning)" : "var(--bs-border-color)" %>;">&#9733;</span><% }) %>
+              </span>
+            <% } else if (flagSePossoLasciareValutazione) { %>
+              <form method="post" action="<%= u('/ticket/' + ticket.id + '/feedback') %>" class="d-inline-flex align-items-center gap-1">
+                <% [1,2,3,4,5].forEach(n => { %>
+                  <button type="submit" name="valutazione" value="<%= n %>" class="border-0 bg-transparent p-0" style="font-size:22px; cursor:pointer; color: var(--bs-border-color);" title="<%= n %> stelle">&#9733;</button>
+                <% }) %>
+              </form>
+            <% } else { %>
+              <span class="text-muted">Non ancora disponibile</span>
+            <% } %>
+          </div></div>
+
+          <%# ---- STORICO STATI ---- %>
+          <% if (ticket.storicoStati.length > 0) { %>
+            <h4 class="h6">Storico stati</h4>
+            <ul class="ps-4 small text-secondary mb-0">
+              <% ticket.storicoStati.forEach(s => { %>
+                <li><%= new Date(s.cambiatoIl).toLocaleString("it-IT") %> — <%= etichettaStato(s.statoNuovo) %> (<%= s.cambiatoDa %>)</li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </div>
+
+        <%# ---- COLONNA DESTRA: CONVERSAZIONE ---- %>
+        <div class="col-md-5 h-100 d-flex flex-column">
+          <div class="px-3 pt-3 pb-2 border-bottom">
+            <h4 class="h6 m-0" id="titoloConversazione">Conversazione (<%= ticket.commenti.length %>)</h4>
+          </div>
+          <div id="chat" class="flex-grow-1 overflow-auto p-3" data-ticket-id="<%= ticket.id %>" data-mio="<%= user.username %>">
+            <% ticket.commenti.forEach(c => { %>
+              <% const mio = c.autoreUsername === user.username; %>
+              <div class="d-flex mb-2 <%= mio ? "justify-content-start" : "justify-content-end" %>" data-commento-id="<%= c.id %>">
+                <div class="card <%= mio ? "bg-info-subtle" : "bg-light" %>" style="max-width:85%;">
+                  <div class="card-body py-2">
+                    <b><%= c.autoreUsername %></b> <small class="text-muted"><%= new Date(c.creatoIl).toLocaleString("it-IT") %></small>
+                    <p class="mb-0 mt-1 text-break"><%= c.testo %></p>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+          <% if (puoScrivere) { %>
+            <div class="p-3 border-top">
+              <form method="post" action="<%= u('/ticket/' + ticket.id + '/commenti') %>" class="input-group">
+                <input class="form-control" name="testo" placeholder="Scrivi un messaggio... (Invio per inviare)" autocomplete="off" required>
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+              </form>
+            </div>
+          <% } %>
+        </div>
+
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // contatore caratteri descrizione (solo in modalità modifica)
+  (function () {
+    var ta = document.getElementById("descrizione");
+    var out = document.getElementById("contatore");
+    if (ta && out) ta.addEventListener("input", function () { out.textContent = ta.value.length; });
+  })();
+
+  // conversazione: porto la chat in fondo e resto in ascolto dei nuovi commenti via socket.io
+  (function () {
+    var chat = document.getElementById("chat");
+    var titoloConv = document.getElementById("titoloConversazione");
+    if (!chat) return;
+    var MIO = chat.getAttribute("data-mio");
+    var TICKET_ID = Number(chat.getAttribute("data-ticket-id"));
+    chat.scrollTop = chat.scrollHeight;
+
+    function appendCommento(c) {
+      if (chat.querySelector('[data-commento-id="' + c.id + '"]')) return; // evito i doppioni
+      var mio = c.autoreUsername === MIO;
+      var wrap = document.createElement("div");
+      wrap.className = "d-flex mb-2 " + (mio ? "justify-content-start" : "justify-content-end");
+      wrap.setAttribute("data-commento-id", c.id);
+      var card = document.createElement("div");
+      card.className = "card " + (mio ? "bg-info-subtle" : "bg-light");
+      card.style.maxWidth = "85%";
+      var body = document.createElement("div");
+      body.className = "card-body py-2";
+      var b = document.createElement("b"); b.textContent = c.autoreUsername;
+      var small = document.createElement("small"); small.className = "text-muted"; small.textContent = " " + new Date(c.creatoIl).toLocaleString("it-IT");
+      var p = document.createElement("p"); p.className = "mb-0 mt-1 text-break"; p.textContent = c.testo;
+      body.appendChild(b); body.appendChild(document.createTextNode(" ")); body.appendChild(small); body.appendChild(p);
+      card.appendChild(body); wrap.appendChild(card); chat.appendChild(wrap);
+      titoloConv.textContent = "Conversazione (" + chat.querySelectorAll('[data-commento-id]').length + ")";
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    var socket = io(); //stessa origine del sito
+    socket.on("connect", function () { socket.emit("join", TICKET_ID); }); //entro nella stanza del ticket
+    socket.on("commento", function (c) { appendCommento(c); }); //commento nuovo in tempo reale
+    window.addEventListener("beforeunload", function () { socket.close(); });
+  })();
+
+  // click sullo sfondo scuro = chiudi (come onClose del modal React)
+  (function () {
+    var bd = document.getElementById("backdrop");
+    if (bd) bd.addEventListener("click", function (e) { if (e.target === bd) location.href = "<%= u('/') %>"; });
+  })();
+</script>
+
+<%- include("../partials/chiusura") %>

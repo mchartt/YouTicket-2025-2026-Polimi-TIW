@@ -1,0 +1,7 @@
+<%# notifica toast in basso a destra (come notify() in App.tsx). Sparisce dopo 3s. %>
+<% if (flash && flash.testo) { %>
+  <div id="flash" class="alert alert-<%= flash.tipo || "success" %> shadow fw-bold position-fixed bottom-0 end-0 m-3" style="z-index: 9999;"><%= flash.testo %></div>
+  <script>
+    setTimeout(function () { var f = document.getElementById("flash"); if (f) f.remove(); }, 3000);
+  </script>
+<% } %>

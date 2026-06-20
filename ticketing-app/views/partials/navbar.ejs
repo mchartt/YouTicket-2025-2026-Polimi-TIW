@@ -1,0 +1,10 @@
+<%# navbar mostrata nelle pagine con utente loggato (come in App.tsx) %>
+<nav class="navbar bg-white border-bottom shadow-sm px-4">
+  <h2 class="navbar-brand m-0"><i class="fa-solid fa-ticket text-primary me-2"></i>YouTicket</h2>
+  <div>
+    <span class="me-3"><%= user.nome || user.username %> (<%= user.ruolo %>)</span>
+    <form method="post" action="<%= u('/logout') %>" class="d-inline">
+      <button type="submit" class="btn btn-outline-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>Esci</button>
+    </form>
+  </div>
+</nav>

@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/allegati.tsx","./src/components/auth.tsx","./src/components/conversazione.tsx","./src/components/dashboard.tsx","./src/components/ticketmodal.tsx","./src/constants/ticketstatus.ts","./src/context/appcontext.ts","./src/services/api.ts","./src/types/index.ts"],"version":"5.7.3"}

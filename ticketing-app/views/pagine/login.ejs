@@ -1,0 +1,106 @@
+<%- include("../partials/intestazione") %>
+
+<%
+  // modo: "login" | "registrazione" ; valori: dati da ri-mostrare dopo un errore
+  const isLogin = modo === "login";
+  const ruolo = valori.ruolo || "UTENTE";
+%>
+
+<div class="row g-0 min-vh-100 bg-white">
+  <section class="col-md-6 d-flex align-items-center text-white p-5" style="background: linear-gradient(var(--bs-primary-text-emphasis), var(--bs-primary));">
+    <div>
+      <h1 class="display-4 fw-bold"><i class="fa-solid fa-ticket me-3"></i>YouTicket</h1>
+      <p class="lead fw-bold">Assistenza IT Politecnico semplice ed immediata.</p>
+      <p>Apri richieste, segui gli aggiornamenti e parla con il team tecnico.</p>
+    </div>
+  </section>
+
+  <section class="col-md-6 d-flex align-items-center justify-content-center p-5">
+    <div class="w-100" style="max-width: 420px;">
+      <h2 class="text-center mb-4"><%= isLogin ? "Accedi" : "Registrati" %></h2>
+
+      <% if (errore) { %>
+        <div class="alert alert-danger"><%= errore %></div>
+      <% } %>
+
+      <form method="post" action="<%= isLogin ? "/login" : "/registrazione" %>">
+        <% if (isLogin) { %>
+          <input class="form-control mb-3" placeholder="Username" autocomplete="off"
+            name="username" value="<%= valori.username || "" %>" required>
+        <% } else { %>
+          <div class="form-text mb-2">Ruolo</div>
+          <select class="form-select" name="ruolo" id="ruolo">
+            <option value="UTENTE" <%= ruolo === "UTENTE" ? "selected" : "" %>>Studente / Docente</option>
+            <option value="TECNICO" <%= ruolo === "TECNICO" ? "selected" : "" %>>Tecnico IT</option>
+          </select>
+          <div class="form-text mb-3">
+            Username: <span id="hintUsername"><%= ruolo === "UTENTE" ? "nome.cognome" : "tech.nome.cognome" %></span>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <input class="form-control" placeholder="Nome" name="nome" value="<%= valori.nome || "" %>" required>
+              <div class="form-text">Es. Mario</div>
+            </div>
+            <div class="col">
+              <input class="form-control" placeholder="Cognome" name="cognome" value="<%= valori.cognome || "" %>" required>
+              <div class="form-text">Es. Rossi</div>
+            </div>
+          </div>
+          <input class="form-control" placeholder="Email istituzionale" name="email" value="<%= valori.email || "" %>" required>
+          <div class="form-text mb-3" id="hintEmail">
+            <%= ruolo === "UTENTE" ? "Es. nome.cognome@mail.polimi.it o nome.cognome@polimi.it" : "Es. nome.cognome@service.polimi.it" %>
+          </div>
+        <% } %>
+
+        <div class="position-relative">
+          <input class="form-control pe-5" type="password" placeholder="Password" autocomplete="off" name="password" id="password" required>
+          <button type="button" id="togglePassword"
+            class="btn border-0 bg-transparent text-secondary position-absolute top-50 end-0 translate-middle-y"
+            aria-label="Mostra password">
+            <i class="fa-solid fa-eye" id="iconaPassword"></i>
+          </button>
+        </div>
+        <div class="form-text mb-3">Minimo 8 caratteri.</div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+          <i class="fa-solid <%= isLogin ? "fa-right-to-bracket" : "fa-user-plus" %> me-2"></i><%= isLogin ? "Accedi" : "Registrati" %>
+        </button>
+      </form>
+
+      <p class="text-center mt-3 text-muted">
+        <%= isLogin ? "Non hai un account?" : "Hai già un account?" %>
+        <a class="btn btn-link" href="<%= isLogin ? "/registrazione" : "/login" %>"><%= isLogin ? "Crea account" : "Accedi" %></a>
+      </p>
+    </div>
+  </section>
+</div>
+
+<script>
+  // mostra/nascondi password (come il toggle "occhio" del componente React)
+  (function () {
+    var btn = document.getElementById("togglePassword");
+    var input = document.getElementById("password");
+    var icona = document.getElementById("iconaPassword");
+    if (btn) btn.addEventListener("click", function () {
+      var mostra = input.type === "password";
+      input.type = mostra ? "text" : "password";
+      icona.className = mostra ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+      btn.setAttribute("aria-label", mostra ? "Nascondi password" : "Mostra password");
+    });
+  })();
+
+  // aggiorna gli hint username/email al cambio di ruolo (in registrazione)
+  (function () {
+    var ruolo = document.getElementById("ruolo");
+    if (!ruolo) return;
+    ruolo.addEventListener("change", function () {
+      var utente = ruolo.value === "UTENTE";
+      document.getElementById("hintUsername").textContent = utente ? "nome.cognome" : "tech.nome.cognome";
+      document.getElementById("hintEmail").textContent = utente
+        ? "Es. nome.cognome@mail.polimi.it o nome.cognome@polimi.it"
+        : "Es. nome.cognome@service.polimi.it";
+    });
+  })();
+</script>
+
+<%- include("../partials/chiusura") %>

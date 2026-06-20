@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: ticketdb
     ports:
-      - "5432:5432"
+      - "5433:5432" # host 5433 -> evita conflitto con un eventuale Postgres locale sulla 5432 (l'app usa comunque la rete interna db:5432)
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,35 +17,24 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  app:
     build:
-      context: ./ticketing-backend
+      context: ./ticketing-app
       dockerfile: Dockerfile
-    container_name: ticket_be
+    container_name: ticket_app
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
       - DATABASE_URL=postgresql://postgres:admin@db:5432/ticketdb?schema=public
       - PORT=8080
       - NODE_ENV=production
-      - CORS_ORIGIN=*
+      - SESSION_SECRET=youticket-prod-secret
     depends_on:
       db:
         condition: service_healthy
     command: >
       sh -c "npx prisma db push && npm start"
-
-  frontend:
-    build:
-      context: ./ticketing-frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: http://localhost:8080/api
-    container_name: ticket_fe
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
 
 volumes:
   db_data:

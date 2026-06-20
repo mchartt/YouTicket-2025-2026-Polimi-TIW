@@ -1,0 +1,61 @@
+<%- include("../partials/intestazione") %>
+
+<%# stessa struttura del modal "isNuovo" di TicketModal.tsx: overlay scuro + card centrata %>
+<div class="modal d-block" id="backdrop" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+    <div class="modal-content shadow-lg">
+
+      <div class="modal-header bg-light">
+        <h3 class="h5 m-0">Nuova richiesta</h3>
+        <a href="<%= u('/') %>" class="btn-close" aria-label="Chiudi"></a>
+      </div>
+
+      <form method="post" action="<%= u('/ticket/nuovo') %>" enctype="multipart/form-data" class="modal-body">
+        <% if (errore) { %>
+          <div class="alert alert-danger"><%= errore %></div>
+        <% } %>
+
+        <input required maxlength="60" class="form-control mb-3" placeholder="Titolo della richiesta"
+          name="titolo" value="<%= valori.titolo || "" %>">
+
+        <select required class="form-select mb-3" name="categoria">
+          <% categorie.forEach(c => { %>
+            <option value="<%= c.nome %>" <%= valori.categoria === c.nome ? "selected" : "" %>><%= c.nome %></option>
+          <% }) %>
+        </select>
+
+        <textarea required maxlength="200" rows="5" class="form-control mb-1" placeholder="Descrivi il problema"
+          name="descrizione" id="descrizione"><%= valori.descrizione || "" %></textarea>
+        <div class="form-text text-end mb-1"><span id="contatore"><%= (valori.descrizione || "").length %></span>/200</div>
+
+        <%# allegati: in SSR upload standard (max 3, max 5MB ciascuno, controllati dal server) %>
+        <div class="card bg-light mb-3">
+          <div class="card-body py-2">
+            <p class="mb-2"><b><i class="fa-solid fa-paperclip me-2"></i>Allegati (max 3)</b></p>
+            <input type="file" class="form-control" name="allegati" multiple>
+            <div class="form-text">Massimo 3 file, fino a 5MB ciascuno.</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary fw-bold"><i class="fa-solid fa-paper-plane me-2"></i>Invia richiesta</button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // contatore caratteri descrizione (come {form.desc.length}/200 in React)
+  (function () {
+    var ta = document.getElementById("descrizione");
+    var out = document.getElementById("contatore");
+    if (ta && out) ta.addEventListener("input", function () { out.textContent = ta.value.length; });
+  })();
+  // click sullo sfondo scuro = chiudi (come onClose del modal React)
+  (function () {
+    var bd = document.getElementById("backdrop");
+    if (bd) bd.addEventListener("click", function (e) { if (e.target === bd) location.href = "<%= u('/') %>"; });
+  })();
+</script>
+
+<%- include("../partials/chiusura") %>

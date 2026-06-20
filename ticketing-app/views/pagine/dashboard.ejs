@@ -1,0 +1,151 @@
+<%- include("../partials/intestazione") %>
+<%- include("../partials/navbar") %>
+
+<%
+  // --- dati derivati lato vista (come in Dashboard.tsx) ---
+  // COLORE_STATO e etichettaStato arrivano da res.locals (condivisi con il dettaglio ticket)
+  const colore = (t) => {
+    if (t.stato === "RISOLTO") return "#16a34a";
+    if (t.stato === "IN_LAVORAZIONE") return "#919191";
+    if (t.stato === "PRESO_IN_CARICO") return "#eab308";
+    if (t.stato === "IN_ATTESA") return "#dc2626";
+    return "#cbd5e1";
+  };
+  // statistiche per i badge in alto (calcolate sui ticket caricati, come nel frontend)
+  const aperti   = tickets.filter(t => t.stato !== "RISOLTO").length;
+  const inAttesa = tickets.filter(t => t.stato === "IN_ATTESA").length;
+  const inLav    = tickets.filter(t => t.stato === "PRESO_IN_CARICO" || t.stato === "IN_LAVORAZIONE").length;
+  const risolti  = tickets.filter(t => t.stato === "RISOLTO").length;
+  // lista tecnici per il filtro, ricavata dai ticket caricati (valori unici)
+  const tecnici = [...new Set(tickets.map(t => t.tecnico).filter(Boolean))];
+%>
+
+<main class="container py-4">
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h2 class="mb-1">Ciao, <%= user.nome || user.username %>!</h2>
+        <p class="text-muted mb-0"><%= aperti %> richieste ancora aperte.</p>
+      </div>
+      <% if (user.ruolo === "UTENTE") { %>
+        <a class="btn btn-primary fw-bold" href="<%= u('/ticket/nuovo') %>"><i class="fa-solid fa-plus me-2"></i>Nuova richiesta</a>
+      <% } %>
+    </div>
+  </div>
+
+  <%# --- SEZIONI: TICKET ATTIVI / ARCHIVIO (conservano i filtri attivi) --- %>
+  <div class="btn-group mb-4">
+    <a class="btn <%= vista === "attivi" ? "btn-primary" : "btn-outline-primary" %>" href="<%= u('/?vista=attivi' + (filtriQS ? '&' + filtriQS : '')) %>"><i class="fa-solid fa-inbox me-2"></i>Attivi</a>
+    <a class="btn <%= vista === "archivio" ? "btn-primary" : "btn-outline-primary" %>" href="<%= u('/?vista=archivio' + (filtriQS ? '&' + filtriQS : '')) %>"><i class="fa-solid fa-box-archive me-2"></i>Archivio</a>
+  </div>
+
+  <% if (user.ruolo === "TECNICO") { %>
+    <%# --- conteggi in alto solo per i tecnici --- %>
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4"><div class="card text-center p-3 h-100 border-danger" style="border-top-width:4px"><b class="d-block fs-3"><%= inAttesa %></b>In attesa</div></div>
+      <div class="col-sm-4"><div class="card text-center p-3 h-100 border-warning" style="border-top-width:4px"><b class="d-block fs-3"><%= inLav %></b>In lavorazione</div></div>
+      <div class="col-sm-4"><div class="card text-center p-3 h-100 border-success" style="border-top-width:4px"><b class="d-block fs-3"><%= risolti %></b>Risolti</div></div>
+    </div>
+
+    <%# --- statistiche valutazioni solo per i tecnici --- %>
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6">
+        <div class="card p-3 h-100">
+          <span class="text-muted small"><i class="fa-solid fa-user me-2"></i>Le mie valutazioni</span>
+          <b class="fs-4"><i class="fa-solid fa-star text-warning me-2"></i><%= statsMie.media ? statsMie.media.toFixed(1) : "—" %></b>
+          <span class="small text-muted"><%= statsMie.count || 0 %> valutazioni ricevute</span>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card p-3 h-100">
+          <span class="text-muted small"><i class="fa-solid fa-users me-2"></i>Valutazioni del team</span>
+          <b class="fs-4"><i class="fa-solid fa-star text-warning me-2"></i><%= statsTeam.media ? statsTeam.media.toFixed(1) : "—" %></b>
+          <span class="small text-muted"><%= statsTeam.count || 0 %> valutazioni ricevute</span>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <%# --- FILTRI (Option A: si applicano col bottone "Filtra") --- %>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <form method="get" action="/" class="d-flex flex-wrap gap-2 align-items-start">
+      <input type="hidden" name="sid" value="<%= sid %>"><%# form GET: il sid va come campo nascosto, l'action perde la query %>
+      <input type="hidden" name="vista" value="<%= vista %>">
+
+      <div class="input-group" style="max-width:260px">
+        <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control" placeholder="Cerca..." name="q" value="<%= filtri.q %>">
+      </div>
+
+      <select class="form-select" style="max-width:200px" name="stato">
+        <option value="">Tutti gli stati</option>
+        <option value="IN_ATTESA" <%= filtri.stato === "IN_ATTESA" ? "selected" : "" %>>In attesa</option>
+        <option value="PRESO_IN_CARICO" <%= filtri.stato === "PRESO_IN_CARICO" ? "selected" : "" %>>Preso in carico</option>
+        <option value="IN_LAVORAZIONE" <%= filtri.stato === "IN_LAVORAZIONE" ? "selected" : "" %>>In lavorazione</option>
+        <option value="RISOLTO" <%= filtri.stato === "RISOLTO" ? "selected" : "" %>>Risolto</option>
+      </select>
+
+      <select class="form-select" style="max-width:200px" name="categoria">
+        <option value="">Tutte le categorie</option>
+        <% categorie.forEach(c => { %>
+          <option value="<%= c.nome %>" <%= filtri.categoria === c.nome ? "selected" : "" %>><%= c.nome %></option>
+        <% }) %>
+      </select>
+
+      <select class="form-select" style="max-width:200px" name="priorita">
+        <option value="">Tutte le priorità</option>
+        <option value="BASSA" <%= filtri.priorita === "BASSA" ? "selected" : "" %>>Bassa</option>
+        <option value="MEDIA" <%= filtri.priorita === "MEDIA" ? "selected" : "" %>>Media</option>
+        <option value="ALTA" <%= filtri.priorita === "ALTA" ? "selected" : "" %>>Alta</option>
+        <option value="URGENTE" <%= filtri.priorita === "URGENTE" ? "selected" : "" %>>Urgente</option>
+      </select>
+
+      <% if (user.ruolo === "TECNICO") { %>
+        <select class="form-select" style="max-width:200px" name="tecnico">
+          <option value="">Tutti gli operatori</option>
+          <% tecnici.forEach(t => { %>
+            <option value="<%= t %>" <%= filtri.tecnico === t ? "selected" : "" %>><%= t %></option>
+          <% }) %>
+        </select>
+      <% } %>
+
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter me-2"></i>Filtra</button>
+    </form>
+
+    <% if (user.ruolo === "TECNICO") { %>
+      <form method="post" action="<%= u('/auto-assegnazione') %>" class="d-flex align-items-center gap-2 ms-auto">
+        <input type="hidden" name="attiva" value="<%= user.autoAssegnazione ? "false" : "true" %>">
+        <span>Auto-assegnazione: <b><%= user.autoAssegnazione ? "ON" : "OFF" %></b></span>
+        <button type="submit" class="btn btn-sm <%= user.autoAssegnazione ? "btn-success" : "btn-outline-secondary" %>"><%= user.autoAssegnazione ? "Disattiva" : "Attiva" %></button>
+      </form>
+    <% } %>
+  </div>
+
+  <%# --- LISTA TICKET (click su una card => dettaglio) --- %>
+  <div class="row g-3">
+    <% tickets.forEach(t => { %>
+      <div class="col-md-6 col-lg-4">
+        <a href="<%= u('/ticket/' + t.id) %>" class="text-decoration-none text-reset">
+          <div class="card h-100" style="cursor:pointer; border-left-width:4px; border-left-color:<%= colore(t) %>;">
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <span class="badge rounded-pill text-capitalize <%= COLORE_STATO[t.stato] %>"><%= etichettaStato(t.stato) %></span>
+                <span class="badge rounded-pill text-capitalize bg-light text-secondary"><%= t.priorita || "Da valutare" %></span>
+              </div>
+              <h3 class="h6 mt-3 mb-1"><%= t.titolo %></h3>
+              <p class="small text-muted mb-0"><%= t.categoria %> · <%= t.autore %></p>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+
+  <% if (tickets.length === 0) { %>
+    <p class="text-center text-muted mt-5">Nessun ticket trovato.</p>
+  <% } %>
+
+</main>
+
+<%- include("../partials/chiusura") %>
