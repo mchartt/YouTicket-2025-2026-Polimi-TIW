@@ -135,13 +135,12 @@ Tecnico:
 - Suggerimento automatico di articoli correlati ✗
 - Statistiche sui tempi medi di risposta e risoluzione ✗
 
-I requisiti dei livelli 1 e 2 sono completati per intero. Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le statistiche sui feedback.
+I requisiti dei livelli 1 e 2 sono stati completati interamente. Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le statistiche sui feedback.
 
 ### Funzionalita aggiuntive oltre la traccia
 
 - Auto-assegnazione attivabile o disattivabile dal singolo tecnico ✓
 - Modifica e archiviazione dei ticket ✓
-- Username generati automaticamente in fase di registrazione ✓
 - Validazione delle email per ruolo: @polimi.it per gli utenti, @service.polimi.it per i tecnici ✓
 - Deploy con Docker Compose e pipeline CI ✓
 
