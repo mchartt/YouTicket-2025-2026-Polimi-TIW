@@ -38,12 +38,14 @@ export async function register(data: z.infer<typeof registerZ>) { //mi assicuro 
 }
 
 export async function login(username: string, pass: string) {
+  if (!username || !pass) throw new ApiError(400, "Username e password sono obbligatori"); //evito il crash se i campi mancano
   const u = await db.user.findFirst({ where: { username: { equals: username.trim(), mode: "insensitive" } } });
   if (!u || !(await bcrypt.compare(pass, u.password))) throw new ApiError(401, "Credenziali non valide"); //se l'utente non esiste o la password non è corretta, lancio un errore
   return { id: u.id, username: u.username, ruolo: u.ruolo, nome: u.nome, autoAssegnazione: u.autoAssegnazione };
 }
 
 export async function toggleAutoAssegnazione(username: string, attiva: boolean) { //per attivare o disattivare l'auto-assegnazione
+  if (!username) throw new ApiError(400, "Username obbligatorio"); //evito il crash di Prisma se manca lo username
   if (!await db.user.findUnique({ where: { username } })) throw new ApiError(404, "Utente non trovato"); //evito il 500 (P2025) su username inesistente
   await db.user.update({ where: { username }, data: { autoAssegnazione: attiva } }); //per aggiornare l'auto-assegnazione dell'utente
   if (attiva) await assegnaInAttesa(); //se l'auto-assegnazione è attiva, assegniamo i ticket in attesa

@@ -17,6 +17,8 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
 
   const [form, setForm] = useState({ titolo: "", desc: "", cat: cats[0]?.nome || "" });
 
+  const [allegatiNuovi, setAllegatiNuovi] = useState<any[]>([]); //allegati scelti nella nuova richiesta, caricati dopo aver creato il ticket
+
   const [commento, setCommento] = useState("");
 
   const [stelle, setStelle] = useState(0);
@@ -49,7 +51,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       } catch {
         // se la rete cade lascio com'e e riprovo al giro dopo
       }
-    }, 500); //polling ogni mezzo secondo per aggiornare la conversazione in tempo reale
+    }, 1000); //polling ogni mezzo secondo per aggiornare la conversazione in tempo reale
     return () => clearInterval(intervallo);
   }, [id]);
 
@@ -63,12 +65,16 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const creaTicket = async (e: any) => {
     e.preventDefault();
     try {
-      await api.createTicket({
+      const nuovo = await api.createTicket({
         titolo: form.titolo,
         descrizione: form.desc,
         categoria: form.cat,
         autore: user.username
       });
+      //ora che il ticket esiste e ha un id, carico gli allegati scelti nel form
+      for (const allegato of allegatiNuovi) {
+        await api.addAttachment(nuovo.id, allegato);
+      }
       notify("Richiesta inviata!");
       onClose();
     } catch (err: any) {
@@ -161,35 +167,22 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     }
   };
 
-  //leggo il file scelto, lo converto in data URL e lo carico come allegato
+  //leggo il file scelto, lo converto in data URL e lo aggiungo alla lista della nuova richiesta
   const caricaAllegato = (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { notify("File troppo grande (max 5MB)"); return; }
+    if (allegatiNuovi.length >= 3) { notify("Massimo 3 allegati"); return; }
     const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        await api.addAttachment(id, { nomeFile: file.name, tipo: file.type, dati: reader.result });
-        notify("Allegato caricato");
-        ricarica();
-      } catch (err: any) {
-        notify(err.message);
-      }
+    reader.onload = () => {
+      setAllegatiNuovi(prev => [...prev, { nomeFile: file.name, tipo: file.type, dati: reader.result }]);
     };
     reader.readAsDataURL(file);
     e.target.value = ""; //resetto l'input così posso ricaricare lo stesso file
   };
 
-  //rimuovo un allegato dal ticket
-  const eliminaAllegato = async (allegatoId: number) => {
-    try {
-      await api.deleteAttachment(id, allegatoId);
-      notify("Allegato rimosso");
-      ricarica();
-    } catch (err: any) {
-      notify(err.message);
-    }
-  };
+  //tolgo un allegato dalla lista prima di inviare la richiesta
+  const eliminaAllegato = (allegato: any) => setAllegatiNuovi(prev => prev.filter(a => a !== allegato));
 
   const risolto = ticket?.stato === "RISOLTO";
   //SE SONO UN UTENTE, IL TICKET È RISOLTO, SONO L'AUTORE DEL TICKET E NON HO ANCORA LASCIATO UNA VALUTAZIONE ALLORA POSSO LASCIARLA, ALTRIMENTI NO
@@ -203,9 +196,6 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //SE SONO L'AUTORE E NON SONO PASSATI PIÙ DI 15 MINUTI DALLA CREAZIONE ALLORA POSSO MODIFICARE IL TICKET
   const entroQuindiciMinuti = !!ticket && (Date.now() - new Date(ticket.dataCreazione).getTime()) < 15 * 60 * 1000;
   const flagPuoModificare = user.ruolo === "UTENTE" && ticket?.autore === user.username && entroQuindiciMinuti;
-
-  //chi può caricare allegati: l'autore o il tecnico assegnato, finché il ticket non è risolto
-  const flagPuoAllegare = (user.ruolo === "UTENTE" && ticket?.autore === user.username) || tecnicoAssegnato;
 
   return (
     <div className="modal d-block" style={{ background: "rgba(0,0,0,0.5)" }} onClick={onClose}>
@@ -227,7 +217,8 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
             </select>
             <textarea required maxLength={200} rows={5} className="form-control mb-1" placeholder="Descrivi il problema"
               value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} />
-            <div className="form-text text-end mb-3">{form.desc.length}/200</div>
+            <div className="form-text text-end mb-1">{form.desc.length}/200</div>
+            <Allegati allegati={allegatiNuovi} puoModificare={true} onCarica={caricaAllegato} onElimina={eliminaAllegato} />
             <button type="submit" className="btn btn-primary fw-bold"><i className="fa-solid fa-paper-plane me-2" />Invia richiesta</button>
           </form>
 
@@ -299,9 +290,8 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
                   </div>
                 </>)}
 
-                {/* ----ALLEGATI: massimo 3, in orizzontale, con la x per rimuoverli---- */}
-                <Allegati allegati={ticket.allegati} ticketId={id} puoModificare={flagPuoAllegare && !risolto}
-                  onCarica={caricaAllegato} onElimina={eliminaAllegato} />
+                {/* ----ALLEGATI: in sola lettura, si scaricano e basta (si aggiungono solo creando la richiesta)---- */}
+                <Allegati allegati={ticket.allegati} ticketId={id} puoModificare={false} />
 
                 {/* ----SEZIONE PER IL TECNICO: PRENDI IN CARICO, CAMBIA STATO E PRIORITA'---- */}
                 {(flagPuoPrendereInCarico || (tecnicoAssegnato && !risolto)) && (
@@ -316,7 +306,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
                             <select className="form-select" value={ticket.stato} onChange={e => cambiaStato(e.target.value)}>
                               <option value={ticket.stato} disabled>{ticket.stato.replace(/_/g, " ")} (attuale)</option>
                               {ticket.stato === "PRESO_IN_CARICO" && <option value="IN_LAVORAZIONE" disabled={!ticket.priorita}>In lavorazione{!ticket.priorita ? " (assegna priorità)" : ""}</option>}
-                              {(ticket.stato === "PRESO_IN_CARICO" || ticket.stato === "IN_LAVORAZIONE") && <option value="RISOLTO">Risolto</option>}
+                              {ticket.stato === "IN_LAVORAZIONE" && <option value="RISOLTO">Risolto</option>}
                             </select>
                           </div>
                           <div className="col-md">

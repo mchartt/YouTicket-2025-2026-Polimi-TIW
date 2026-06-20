@@ -8,13 +8,21 @@ export default function Allegati({ allegati, ticketId, puoModificare, onCarica, 
         <p className="mb-2"><b><i className="fa-solid fa-paperclip me-2" />Allegati ({allegati.length}/3)</b></p>
         <div className="d-flex flex-wrap gap-2 align-items-center">
           {allegati.length === 0 && <span className="small text-muted">Nessun allegato.</span>}
-          {allegati.map((a: any) => (
-            <span key={a.id} className="d-inline-flex align-items-center gap-2 border rounded-pill bg-white ps-3 pe-2 py-1">
-              <a className="small text-decoration-none text-truncate" style={{ maxWidth: 140 }} href={api.attachmentUrl(ticketId, a.id)} target="_blank" rel="noreferrer" title={a.nomeFile}>
-                <i className="fa-solid fa-download me-2" />{a.nomeFile}
-              </a>
+          {allegati.map((a: any, i: number) => (
+            <span key={a.id ?? i} className="d-inline-flex align-items-center gap-2 border rounded-pill bg-white ps-3 pe-2 py-1">
+              {ticketId ? (
+                //allegato già salvato sul ticket: lo si può scaricare
+                <a className="small text-decoration-none text-truncate" style={{ maxWidth: 140 }} href={api.attachmentUrl(ticketId, a.id)} target="_blank" rel="noreferrer" title={a.nomeFile}>
+                  <i className="fa-solid fa-download me-2" />{a.nomeFile}
+                </a>
+              ) : (
+                //allegato scelto in fase di creazione: non è ancora sul server, mostro solo il nome
+                <span className="small text-truncate" style={{ maxWidth: 140 }} title={a.nomeFile}>
+                  <i className="fa-solid fa-paperclip me-2" />{a.nomeFile}
+                </span>
+              )}
               {puoModificare && (
-                <button type="button" className="btn btn-sm btn-link text-danger p-0 lh-1" aria-label="Rimuovi allegato" onClick={() => onElimina(a.id)}>
+                <button type="button" className="btn btn-sm btn-link text-danger p-0 lh-1" aria-label="Rimuovi allegato" onClick={() => onElimina(a)}>
                   <i className="fa-solid fa-xmark" />
                 </button>
               )}

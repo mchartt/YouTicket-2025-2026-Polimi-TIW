@@ -36,7 +36,7 @@ export default function Conversazione({ commenti, mioUsername, puoScrivere, comm
       {puoScrivere && (
         <div className="p-3 border-top">
           <div className="input-group">
-            <input className="form-control" placeholder="Scrivi un messaggio... (Ctrl+Invio)"
+            <input className="form-control" placeholder="Scrivi un messaggio... (Invio per inviare)"
               value={commento} onChange={e => setCommento(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") onInvia(); }} />
             <button className="btn btn-primary" onClick={onInvia}><i className="fa-solid fa-paper-plane" /></button>

@@ -29,13 +29,15 @@ export async function getTicketDetails(id: number) { //per ottenere i dettagli d
   const t = await db.ticket.findUnique({ where: { id }, include: { ticketComments: true, ticketStateLogs: { orderBy: { id: "asc" } }, allegati: { select: { id: true, nomeFile: true, tipo: true, creatoIl: true }, orderBy: { id: "asc" } } } });
   if (!t) throw new ApiError(404, "Ticket non trovato"); //se il ticket non esiste, lancio un errore
   const priorita = (!t.tecnico || t.stato === "IN_ATTESA") ? null : t.priorita;
-  const commenti = t.ticketComments.filter(c => !/^(Stato|Gravità)\s/.test(c.testo)); //per ottenere i commenti filtrati
+  const commenti = t.ticketComments; //i cambi di stato sono salvati in ticketStateLog, qui mostro tutti i commenti dell'utente
   const storicoStati = t.ticketStateLogs.map(s => s.statoNuovo === "CHIUSO" ? { ...s, statoNuovo: "RISOLTO" } : s);
   return statoVisibile({ ...t, priorita, commenti, storicoStati });
 }
 
 export async function createTicket(data: any) { //per creare un nuovo ticket
   validaTesti(data.titolo, data.descrizione);
+  const categoria = await db.categoria.findFirst({ where: { nome: { equals: data.categoria, mode: "insensitive" } } });
+  if (!categoria) throw new ApiError(400, "Categoria non valida"); //la categoria deve esistere davvero
   const now = new Date().toISOString(); //per ottenere la data e l'ora corrente
   const t = await db.ticket.create({ data: { titolo: data.titolo, descrizione: data.descrizione, categoria: data.categoria, autore: data.autore, stato: "IN_ATTESA", priorita: null, dataCreazione: now, dataAggiornamento: now } }); //whitelist dei campi: il client non può impostare tecnico/valutazione/archiviato
   await db.ticketStateLog.create({ data: { ticketId: t.id, statoNuovo: "IN_ATTESA", cambiatoIl: now, cambiatoDa: data.autore } });
@@ -66,6 +68,7 @@ export async function aggiornaStato(id: number, stato: string, chi: string) { //
   if (!corrente.tecnico || corrente.tecnico !== chi) throw new ApiError(403, "Solo il tecnico assegnato può cambiare lo stato"); //autorizzazione: deve essere il tecnico del ticket
   if (corrente.stato === "RISOLTO" || corrente.stato === "CHIUSO") throw new ApiError(400, "Il ticket è già risolto"); //un ticket risolto non si riapre
   if (stato === "IN_LAVORAZIONE" && !corrente.priorita) throw new ApiError(400, "Assegna prima una priorità per passare in lavorazione"); //il ticket va in lavorazione solo dopo aver assegnato la priorità
+  if (stato === "RISOLTO" && corrente.stato !== "IN_LAVORAZIONE") throw new ApiError(400, "Il ticket deve prima passare in lavorazione"); //non si può risolvere saltando la fase di lavorazione
   const t = await db.ticket.update({ where: { id }, data: { stato, dataAggiornamento: new Date().toISOString() } });
   await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: stato, cambiatoIl: new Date().toISOString(), cambiatoDa: chi } });
   return t; //per ottenere il ticket aggiornato
@@ -84,6 +87,7 @@ export async function prendiInCarico(id: number, username: string) { //per asseg
   const t = await db.ticket.findUnique({ where: { id } }); //per ottenere il ticket
   if (!t) throw new ApiError(404, "Ticket non trovato");
   if (t.stato === "RISOLTO" || t.stato === "CHIUSO") throw new ApiError(400, "Non assegnabile"); //se è risolto o chiuso, lancio un errore
+  if (t.tecnico && t.tecnico !== username) throw new ApiError(409, "Ticket già preso in carico da un altro tecnico"); //non si può rubare un ticket altrui
   const st = t.stato === "IN_ATTESA" ? "PRESO_IN_CARICO" : (t.stato || "IN_ATTESA"); //se il ticket è in attesa, assegnalo a tecnico, altrimenti mantienilo come è
   const res = await db.ticket.update({ where: { id }, data: { tecnico: username, stato: st, dataAggiornamento: new Date().toISOString() } });
   if (st !== t.stato) await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: st, cambiatoIl: new Date().toISOString(), cambiatoDa: username } });
@@ -133,14 +137,19 @@ export async function aggiungiCommento(ticketId: number, testo: string, autore: 
 export async function aggiungiAllegato(ticketId: number, data: any) { //per allegare un file a un ticket (salvato come data URL)
   const t = await db.ticket.findUnique({ where: { id: ticketId } });
   if (!t) throw new ApiError(404, "Ticket non trovato");
-  if (await db.allegato.count({ where: { ticketId } }) >= 3) throw new ApiError(400, "Massimo 3 allegati per ticket"); //limite di 3 allegati
-  const a = await db.allegato.create({ data: { ticketId, nomeFile: data.nomeFile, tipo: data.tipo, dati: data.dati, creatoIl: new Date().toISOString() } });
+  if (!data.nomeFile || !data.tipo || !data.dati) throw new ApiError(400, "Allegato non valido"); //servono nome, tipo e contenuto del file
+  if (data.dati.length > 7000000) throw new ApiError(400, "File troppo grande (max 5MB)"); //~5MB una volta convertito in base64
+  //conto e creo nella stessa transazione serializzabile: così due upload simultanei non superano i 3 allegati
+  const a = await db.$transaction(async (tx) => {
+    if (await tx.allegato.count({ where: { ticketId } }) >= 3) throw new ApiError(400, "Massimo 3 allegati per ticket"); //limite di 3 allegati
+    return tx.allegato.create({ data: { ticketId, nomeFile: data.nomeFile, tipo: data.tipo, dati: data.dati, creatoIl: new Date().toISOString() } });
+  }, { isolationLevel: "Serializable" });
   return { id: a.id, nomeFile: a.nomeFile, tipo: a.tipo, creatoIl: a.creatoIl }; //rispondo senza i dati pesanti del file
 }
 
-export async function eliminaAllegato(id: number) { //per cancellare un allegato
+export async function eliminaAllegato(ticketId: number, id: number) { //per cancellare un allegato di un ticket
   const a = await db.allegato.findUnique({ where: { id } });
-  if (!a) throw new ApiError(404, "Allegato non trovato");
+  if (!a || a.ticketId !== ticketId) throw new ApiError(404, "Allegato non trovato"); //l'allegato deve appartenere a questo ticket
   await db.allegato.delete({ where: { id } });
 }
 

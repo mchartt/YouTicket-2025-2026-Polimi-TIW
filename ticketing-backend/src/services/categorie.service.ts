@@ -6,6 +6,7 @@ export async function getCategorie(soloAttive = false) {
 }
 
 export async function creaCategoria(nome: string) {
+  if (!nome || !nome.trim()) throw new ApiError(400, "Nome categoria obbligatorio");
   if (await db.categoria.findFirst({ where: { nome: { equals: nome, mode: "insensitive" } } })) throw new ApiError(409, "Categoria esistente");
   return db.categoria.create({ data: { nome, attivo: true } }); //per creare una nuova categoria
 }

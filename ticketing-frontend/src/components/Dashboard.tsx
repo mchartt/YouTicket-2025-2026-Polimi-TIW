@@ -93,7 +93,7 @@ export default function Dashboard() {
   //--Definisco il colore del bordo del ticket a seconda dello stato--
   const colore = (t: Ticket) => {
     if (t.stato === "RISOLTO") return "#16a34a";
-    if (t.stato === "IN_LAVORAZIONE") return "#e2631f";
+    if (t.stato === "IN_LAVORAZIONE") return "#919191";
     if (t.stato === "PRESO_IN_CARICO") return "#eab308";
     if (t.stato === "IN_ATTESA") return "#dc2626";
     return "#cbd5e1";
@@ -137,7 +137,7 @@ export default function Dashboard() {
         <button className={`btn ${vista === "archivio" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setVista("archivio")}><i className="fa-solid fa-box-archive me-2" />Archivio</button>
       </div>
 
-      {/* ---MOSTRO STATICHE IN ALTO SOLO PER I TECNICI---*/}
+      {/* ---MOSTRO STATISTICHE IN ALTO SOLO PER I TECNICI---*/}
       {user.ruolo === "TECNICO" && (
         <div className="row g-3 mb-4">
           <div className="col-sm-4"><div className="card text-center p-3 h-100 border-danger" style={{ borderTopWidth: 4 }}><b className="d-block fs-3">{inAttesa}</b>In attesa</div></div>
