@@ -125,17 +125,16 @@ Tecnico:
 - Dashboard tecnico con conteggi dei ticket aperti, in lavorazione e risolti ✓
 - Valutazione della risoluzione da parte dell'utente con feedback da 1 a 5 sui ticket risolti o chiusi ✓
 
-### Livello 3: notifiche, real-time o knowledge base
+### Estensioni Livello 3: notifiche, real-time o knowledge base
 
 - Aggiornamenti in tempo reale dei commenti tramite chat utente/tecnico su WebSocket ✓
 - Caricamento di allegati ai ticket, con download ed eliminazione ✓
 - Statistiche sui feedback ricevuti ✓
-- Notifiche email quando un ticket riceve una risposta ✗
-- Knowledge base con articoli di supporto ✗
-- Suggerimento automatico di articoli correlati ✗
-- Statistiche sui tempi medi di risposta e risoluzione ✗
+- Contaninerizzazione CI/CD ✓
+- Deployment su Vercel/Railway ✓
 
-I requisiti dei livelli 1 e 2 sono stati completati interamente. Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le statistiche sui feedback.
+I requisiti dei livelli 1 e 2 sono stati completati interamente.
+Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le statistiche sui feedback.
 
 ### Funzionalita aggiuntive oltre la traccia
 
