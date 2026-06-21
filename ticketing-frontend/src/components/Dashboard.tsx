@@ -38,8 +38,8 @@ export default function Dashboard() {
 
   const [autoAssign, setAutoAssign] = useState<boolean>(user.autoAssegnazione ?? false);
 
-  const [statsMie, setStatsMie] = useState<any>(null); //statistiche valutazioni dei miei ticket (tecnico)
-  const [statsTeam, setStatsTeam] = useState<any>(null); //statistiche valutazioni di tutto il team (tecnico)
+  const [mieStatistiche, setStatsMie] = useState<any>(null); //statistiche valutazioni dei miei ticket (tecnico)
+  const [statisticheTeam, setStatsTeam] = useState<any>(null); //statistiche valutazioni di tutto il team (tecnico)
 
   const toggleAutoAssign = async (checked: boolean) => {
     await api.toggleAutoAssegnazione(user.username, checked);
@@ -68,7 +68,7 @@ export default function Dashboard() {
 
       const [listaTickets, listaCat] = await Promise.all([
         api.tickets(params.toString()), //richiesta 1 faccio una fetch per prendere i ticket filtrati
-        categorie.length === 0 ? api.cats() : Promise.resolve(categorie) //richiesta 2 prendo le categorie solo se non le ho già caricate, altrimenti risolvo subito con quelle già in stato
+        categorie.length === 0 ? api.categorie() : Promise.resolve(categorie) //richiesta 2 prendo le categorie solo se non le ho già caricate, altrimenti risolvo subito con quelle già in stato
       ]);
 
       setTickets(listaTickets); //aggiorno lo stato dei ticket con quelli presi dalla richiesta
@@ -152,15 +152,15 @@ export default function Dashboard() {
           <div className="col-sm-6">
             <div className="card p-3 h-100">
               <span className="text-muted small"><i className="fa-solid fa-user me-2" />Le mie valutazioni</span>
-              <b className="fs-4"><i className="fa-solid fa-star text-warning me-2" />{statsMie?.media ? statsMie.media.toFixed(1) : "—"}</b>
-              <span className="small text-muted">{statsMie?.count || 0} valutazioni ricevute</span>
+              <b className="fs-4"><i className="fa-solid fa-star text-warning me-2" />{mieStatistiche?.media ? mieStatistiche.media.toFixed(1) : "—"}</b>
+              <span className="small text-muted">{mieStatistiche?.count || 0} valutazioni ricevute</span>
             </div>
           </div>
           <div className="col-sm-6">
             <div className="card p-3 h-100">
               <span className="text-muted small"><i className="fa-solid fa-users me-2" />Valutazioni del team</span>
-              <b className="fs-4"><i className="fa-solid fa-star text-warning me-2" />{statsTeam?.media ? statsTeam.media.toFixed(1) : "—"}</b>
-              <span className="small text-muted">{statsTeam?.count || 0} valutazioni ricevute</span>
+              <b className="fs-4"><i className="fa-solid fa-star text-warning me-2" />{statisticheTeam?.media ? statisticheTeam.media.toFixed(1) : "—"}</b>
+              <span className="small text-muted">{statisticheTeam?.count || 0} valutazioni ricevute</span>
             </div>
           </div>
         </div>

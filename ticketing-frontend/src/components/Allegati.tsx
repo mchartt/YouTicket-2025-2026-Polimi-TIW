@@ -1,7 +1,7 @@
 import { api } from "../services/api";
 
 //Sezione allegati: massimo 3 file, mostrati in orizzontale con la x per rimuoverli
-export default function Allegati({ allegati, ticketId, puoModificare, onCarica, onElimina }: any) {
+export default function Allegati({ allegati, ticketId, puoModificare, onCarica: onCaricaAllegato, onElimina: onEliminaAllegato }: any) {
   return (
     <div className="card bg-light mb-3">
       <div className="card-body py-2">
@@ -12,7 +12,7 @@ export default function Allegati({ allegati, ticketId, puoModificare, onCarica, 
             <span key={a.id ?? i} className="d-inline-flex align-items-center gap-2 border rounded-pill bg-white ps-3 pe-2 py-1">
               {ticketId ? (
                 //allegato già salvato sul ticket: lo si può scaricare
-                <a className="small text-decoration-none text-truncate" style={{ maxWidth: 140 }} href={api.attachmentUrl(ticketId, a.id)} target="_blank" rel="noreferrer" title={a.nomeFile}>
+                <a className="small text-decoration-none text-truncate" style={{ maxWidth: 140 }} href={api.aggiungiURL(ticketId, a.id)} target="_blank" rel="noreferrer" title={a.nomeFile}>
                   <i className="fa-solid fa-download me-2" />{a.nomeFile}
                 </a>
               ) : (
@@ -22,7 +22,7 @@ export default function Allegati({ allegati, ticketId, puoModificare, onCarica, 
                 </span>
               )}
               {puoModificare && (
-                <button type="button" className="btn btn-sm btn-link text-danger p-0 lh-1" aria-label="Rimuovi allegato" onClick={() => onElimina(a)}>
+                <button type="button" className="btn btn-sm btn-link text-danger p-0 lh-1" aria-label="Rimuovi allegato" onClick={() => onEliminaAllegato(a)}>
                   <i className="fa-solid fa-xmark" />
                 </button>
               )}
@@ -31,7 +31,7 @@ export default function Allegati({ allegati, ticketId, puoModificare, onCarica, 
           {puoModificare && allegati.length < 3 && (
             <label className="btn btn-outline-primary btn-sm mb-0">
               <i className="fa-solid fa-paperclip me-2" />Allega file
-              <input type="file" hidden onChange={onCarica} />
+              <input type="file" hidden onChange={onCaricaAllegato} />
             </label>
           )}
         </div>

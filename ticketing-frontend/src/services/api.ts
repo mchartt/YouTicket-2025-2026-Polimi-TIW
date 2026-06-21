@@ -37,21 +37,21 @@ async function req(path: string, method = "GET", body?: any) {
 export const api = {
   login:                    (b: any) => req("/auth/login", "POST", b),
   register:                 (b: any) => req("/auth/register", "POST", b),
-  cats:                     () => req("/categorie?attive=true"),
+  categorie:                     () => req("/categorie?attive=true"),
   tickets:                  (q = "") => req(`/tickets/search${q ? "?" + q : ""}`),
-  ticketDetails:            (id: number) => req(`/tickets/${id}`),
-  createTicket:             (b: any) => req("/tickets", "POST", b),
-  editTicket:               (id: number, b: any) => req(`/tickets/${id}`, "PATCH", b),
-  archiveTicket:            (id: number) => req(`/tickets/${id}/archivia`, "PATCH"),
-  changeStatus:             (id: number, b: any) => req(`/tickets/${id}/stato`, "PATCH", b),
+  dettagliTicket:            (id: number) => req(`/tickets/${id}`),
+  creaTicket:             (b: any) => req("/tickets", "POST", b),
+  modificaTicket:               (id: number, b: any) => req(`/tickets/${id}`, "PATCH", b),
+  archiviaTicket:            (id: number) => req(`/tickets/${id}/archivia`, "PATCH"),
+  cambiaStato:             (id: number, b: any) => req(`/tickets/${id}/stato`, "PATCH", b),
   changePriority:           (id: number, p: string, tecnico: string) => req(`/tickets/${id}/priorita`, "PATCH", { priorita: p, tecnicoUsername: tecnico }),
   takeCharge:               (id: number, tecnico: string) => req(`/tickets/${id}/assegna`, "PATCH", { tecnicoUsername: tecnico }),
-  addComment:               (id: number, b: any) => req(`/tickets/${id}/commenti`, "POST", b),
-  addAttachment:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
-  attachmentUrl:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
-  wsUrl:                     () => BASE.replace(/^http/, "ws").replace(/\/api\/?$/, ""), //da http(s)://host/api a ws(s)://host per la chat
+  aggiungiCommento:               (id: number, b: any) => req(`/tickets/${id}/commenti`, "POST", b),
+  aggiungiAllegato:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
+  aggiungiURL:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
+  serverURL:                        () => BASE.replace(/\/api\/?$/, ""), //da http(s)://host/api a http(s)://host per la chat Socket.IO
 
-  sendFeedback:             (id: number, valutazione: number) => req(`/tickets/${id}/feedback`, "POST", { valutazione }),
+  inviaFeedback:             (id: number, valutazione: number) => req(`/tickets/${id}/feedback`, "POST", { valutazione }),
   stats:                    (tecnico = "") => req(`/tickets/stats/feedback${tecnico ? "?tecnico=" + tecnico : ""}`),
   toggleAutoAssegnazione:   (username: string, attiva: boolean) => req("/auth/auto-assegnazione", "PATCH", { tecnicoUsername: username, attiva }),
 };

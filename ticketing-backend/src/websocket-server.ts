@@ -1,31 +1,24 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { Server } from "socket.io";
 
-//Per ogni ticket tengo l'insieme delle connessioni aperte sulla sua chat.
+//Con Socket.IO ogni ticket ha la sua "stanza": chi apre la chat di un ticket entra nella stanza di quel ticket.
 //Così quando arriva un commento nuovo lo mando solo a chi sta guardando quel ticket.
-const stanze = new Map<number, Set<WebSocket>>();
+let io: Server;
 
-export function initWs(server: any) { //collego il server WebSocket allo stesso server HTTP di Express
-  const wss = new WebSocketServer({ server });
-  wss.on("connection", socket => {
-    let ticketId: number | null = null;
-    socket.on("message", raw => {
-      //il client manda { ticketId } per dire quale chat sta seguendo
-      try {
-        ticketId = Number(JSON.parse(raw.toString()).ticketId);
-        if (!stanze.has(ticketId)) stanze.set(ticketId, new Set());
-        stanze.get(ticketId)!.add(socket);
-      } catch {
-        //messaggio non valido: lo ignoro
-      }
-    });
-    socket.on("close", () => { if (ticketId !== null) stanze.get(ticketId)?.delete(socket); }); //alla chiusura tolgo la connessione dalla stanza
+const nomeStanza = (ticketId: number) => `ticket:${ticketId}`; //nome univoco della stanza per ogni ticket
+
+export function initWs(server: any) { //collego Socket.IO allo stesso server HTTP di Express
+  const corsOrigin = process.env.CORS_ORIGIN || "*"; //stesse origini permesse dall'API
+  const origins = corsOrigin === "*" ? "*" : corsOrigin.split(",").map(s => s.trim());
+  io = new Server(server, { cors: { origin: origins } });
+
+  io.on("connection", socket => {
+    //il client manda "seguiTicket" con l'id per dire quale chat sta seguendo
+    socket.on("seguiTicket", (ticketId: number) => socket.join(nomeStanza(ticketId)));
+    //all'uscita dal ticket Socket.IO toglie da solo la connessione dalla stanza
   });
 }
 
 //invio il nuovo commento a tutte le connessioni che stanno guardando quel ticket
 export function inviaCommento(ticketId: number, commento: any) {
-  const stanza = stanze.get(ticketId);
-  if (!stanza) return;
-  const dati = JSON.stringify(commento);
-  for (const socket of stanza) if (socket.readyState === WebSocket.OPEN) socket.send(dati);
+  io.to(nomeStanza(ticketId)).emit("nuovoCommento", commento);
 }

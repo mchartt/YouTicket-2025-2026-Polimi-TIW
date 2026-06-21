@@ -39,6 +39,7 @@ export async function login(username: string, pass: string) {
   return { id: u.id, username: u.username, ruolo: u.ruolo, nome: u.nome, autoAssegnazione: u.autoAssegnazione };
 }
 
+
 export async function toggleAutoAssegnazione(username: string, attiva: boolean) { //per attivare o disattivare l'auto-assegnazione
   if (!username) throw new ApiError(400, "Username obbligatorio"); //evito il crash di Prisma se manca lo username
   if (!await db.user.findUnique({ where: { username } })) throw new ApiError(404, "Utente non trovato"); //evito il 500 (P2025) su username inesistente

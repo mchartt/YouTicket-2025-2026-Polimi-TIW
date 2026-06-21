@@ -5,7 +5,7 @@ import { api } from "../services/api";
 export default function Auth() {
   const { login, notify } = useContext(AppCtx); //prendo le funzioni di login e notify dal contesto globale AppCtx
 
-  const [isLogin, setIsLogin] = useState(true); //stato per sapere se siamo in modalità login o registrazione
+  const [isLoginAs, setIsLogin] = useState(true); //stato per sapere se siamo in modalità login o registrazione
 
   const [form, setForm] = useState({ 
     username: "", password: "", nome: "", cognome: "", email: "", ruolo: "UTENTE"
@@ -28,7 +28,7 @@ export default function Auth() {
     // così se c'è un nuovo errore mostro solo quello più recente
 
     try {
-      const dati = isLogin // a seconda se siamo in modalità login o registrazione 
+      const ottieniDatiDaLoginOppureRegistrazione = isLoginAs // a seconda se siamo in modalità login o registrazione 
       // chiamo l'API corrispondente con i dati del form
         ? await api.login({ username: form.username, password: form.password })
         : await api.register({ 
@@ -39,8 +39,8 @@ export default function Auth() {
             ruolo: form.ruolo
           });
 
-      login(dati); // se la richiesta ha successo, chiamo la funzione di login del contesto globale
-      notify(isLogin ? "Accesso effettuato" : "Registrazione completata"); //mostro una notifica di successo a seconda se era login o registrazione
+      login(ottieniDatiDaLoginOppureRegistrazione); // se la richiesta ha successo, chiamo la funzione di login del contesto globale
+      notify(isLoginAs ? "Accesso effettuato" : "Registrazione completata"); //mostro una notifica di successo a seconda se era login o registrazione
       //RICORDATI che sia login che notify sono funzioni di App.tsx passate tramite il contesto AppCtx
     } catch (err: any) { //se le op di login o registrazione falliscono, prendo l'errore e ne mostro il messaggio all'utente
       setErrore(err.message || "Operazione non riuscita");
@@ -60,12 +60,12 @@ export default function Auth() {
 
       <section className="col-md-6 d-flex align-items-center justify-content-center p-5">
         <div className="w-100" style={{ maxWidth: 420 }}>
-          <h2 className="text-center mb-4">{isLogin ? "Accedi" : "Registrati"}</h2>
+          <h2 className="text-center mb-4">{isLoginAs ? "Accedi" : "Registrati"}</h2>
 
           {errore && <div className="alert alert-danger">{errore}</div>}
 
           <form onSubmit={submit}>
-            {isLogin ? ( //se l'utente è in modalità login mostro solo il campo username 
+            {isLoginAs ? ( //se l'utente è in modalità login mostro solo il campo username 
             // altrimenti mostro i campi nome, cognome, email e ruolo per registrazione
               <input className=" form-control mb-3" placeholder="Username" autoComplete="off"
                 value={form.username} onChange={e => set("username", e.target.value)} required />
@@ -116,14 +116,14 @@ export default function Auth() {
             <div className="form-text mb-3">Minimo 8 caratteri.</div>
 
             <button type="submit" className="btn btn-primary w-100 py-2 fw-bold">
-              <i className={`fa-solid ${isLogin ? "fa-right-to-bracket" : "fa-user-plus"} me-2`} />{isLogin ? "Accedi" : "Registrati"}
+              <i className={`fa-solid ${isLoginAs ? "fa-right-to-bracket" : "fa-user-plus"} me-2`} />{isLoginAs ? "Accedi" : "Registrati"}
             </button>
           </form>
 
           <p className="text-center mt-3 text-muted"> {/* con muted il testo diventa grigio chiaro, con mt-3 aggiungo margine sopra*/}
-            {isLogin ? "Non hai un account?" : "Hai già un account?"}
-            <button type="button" className="btn btn-link" onClick={() => { setIsLogin(!isLogin); setErrore(""); }}>
-              {isLogin ? "Crea account" : "Accedi"}
+            {isLoginAs ? "Non hai un account?" : "Hai già un account?"}
+            <button type="button" className="btn btn-link" onClick={() => { setIsLogin(!isLoginAs); setErrore(""); }}>
+              {isLoginAs ? "Crea account" : "Accedi"}
             </button>
           </p>
         </div>

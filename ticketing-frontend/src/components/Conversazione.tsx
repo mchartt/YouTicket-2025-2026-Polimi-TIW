@@ -15,16 +15,16 @@ export default function Conversazione({ commenti, mioUsername, puoScrivere, comm
         <h4 className="h6 m-0">Conversazione ({commenti.length})</h4>
       </div>
       <div ref={chat} className="flex-grow-1 overflow-auto p-3">
-        {commenti.map((c: any) => { //per ogni commento controllo se è mio o dell'altro
+        {commenti.map((commento: any) => { //per ogni commento controllo se è mio o dell'altro
         // per allinearlo a destra o sinistra e dargli un colore diverso
-          const mio = c.autoreUsername === mioUsername;
+          const mio = commento.autoreUsername === mioUsername;
           return (
-            <div key={c.id} className={`d-flex mb-2 ${mio ? "justify-content-start" : "justify-content-end"}`}>
+            <div key={commento.id} className={`d-flex mb-2 ${mio ? "justify-content-start" : "justify-content-end"}`}>
               <div className={`card ${mio ? "bg-info-subtle" : "bg-light"}`} style={{ maxWidth: "85%" }}>
                 <div className="card-body py-2">
-                  <b>{c.autoreUsername}</b>{" "}
-                  <small className="text-muted">{new Date(c.creatoIl).toLocaleString("it-IT")}</small>
-                  <p className="mb-0 mt-1 text-break">{c.testo}</p>
+                  <b>{commento.autoreUsername}</b>{" "}
+                  <small className="text-muted">{new Date(commento.creatoIl).toLocaleString("it-IT")}</small>
+                  <p className="mb-0 mt-1 text-break">{commento.testo}</p>
                 </div>
               </div>
             </div>

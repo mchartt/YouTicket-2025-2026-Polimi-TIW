@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { io } from "socket.io-client";
 import { AppCtx } from "../context/AppContext";
 import { api } from "../services/api";
 import type { TicketDetail } from "../types";
@@ -30,37 +31,36 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //carico i dettagli del ticket e poi resto in ascolto dei nuovi commenti via WebSocket (niente più polling)
   useEffect(() => {
     if (isNuovo) return; // se è un nuovo ticket non devo fare la richiesta al server
-    api.ticketDetails(id) //richiesta iniziale per prendere i dettagli del ticket
+    api.dettagliTicket(id) //richiesta iniziale per prendere i dettagli del ticket
       .then(setTicket)
       .catch(() => { // se la richiesta fallisce mostro un messaggio di errore e chiudo il modal
         notify("Errore nel caricamento");
         onClose();
       });
 
-    //apro la WebSocket e dico al server quale chat sto seguendo
-    const socket = new WebSocket(api.wsUrl());
-    socket.onopen = () => socket.send(JSON.stringify({ ticketId: id }));
-    socket.onmessage = e => {
-      const commento = JSON.parse(e.data); //il server mi manda il nuovo commento
+    //apro la connessione Socket.IO e dico al server quale chat sto seguendo
+    const socket = io(api.serverURL());
+    socket.emit("seguiTicket", id);
+    socket.on("nuovoCommento", (commento: any) => { //il server mi manda il nuovo commento
       setTicket(prev => {
         if (!prev || prev.commenti.some(c => c.id === commento.id)) return prev; //evito i doppioni
         return { ...prev, commenti: [...prev.commenti, commento] };
       });
-    };
-    return () => socket.close(); //chiudo la WebSocket quando esco dal ticket
+    });
+    return () => { socket.disconnect(); }; //chiudo la connessione quando esco dal ticket
   }, [id]);
 
   //ricarico i dati del ticket ad ogni operazione
   const ricarica = async () => {
-    const aggiornato = await api.ticketDetails(id);
-    setTicket(aggiornato);
+    const ticketAggiornato = await api.dettagliTicket(id);
+    setTicket(ticketAggiornato);
   };
 
   //funzione per creare un nuovo ticket, prende i dati dal form e li invia al server
   const creaTicket = async (e: any) => {
     e.preventDefault();
     try {
-      const nuovo = await api.createTicket({
+      const nuovo = await api.creaTicket({
         titolo: form.titolo,
         descrizione: form.desc,
         categoria: form.cat,
@@ -68,10 +68,10 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       });
       //ora che il ticket esiste e ha un id, carico gli allegati scelti nel form
       for (const allegato of allegatiNuovi) {
-        await api.addAttachment(nuovo.id, allegato);
+        await api.aggiungiAllegato(nuovo.id, allegato);
       }
       notify("Richiesta inviata!");
-      onClose();
+      onClose(); //chiudo il modal e torno alla lista dei ticket
     } catch (err: any) {
       notify(err.message);
     }
@@ -81,7 +81,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const aggiungiCommento = async () => {
     if (!commento.trim()) return; //se il commento è vuoto non faccio nulla
     try { //RICORDATI: inizialmente il commento parte vuoto poi viene aggiornato al click del bottone invia, se il commento è solo spazi vuol dire che è vuoto e non lo invio
-      await api.addComment(id, { testo: commento, autoreUsername: user.username }); //salvo nel backend
+      await api.aggiungiCommento(id, { testo: commento, autoreUsername: user.username }); //salvo nel backend
       setCommento(""); //pulisco il commento dopo l'invio: il commento comparirà via WebSocket
     } catch (err: any) {
       notify(err.message); //se c'è un errore mostro il messaggio di errore
@@ -91,7 +91,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //funzione per cambiare lo stato del ticket, prende in input il nuovo stato e lo invia al server
   const cambiaStato = async (nuovoStato: string) => {
     try { //stessa cosa di prima
-      await api.changeStatus(id, { stato: nuovoStato, chiEsegueAzione: user.username });
+      await api.cambiaStato(id, { stato: nuovoStato, chiEsegueAzione: user.username });
       notify("Stato aggiornato");
       ricarica();
     } catch (err: any) {
@@ -121,7 +121,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
 
   const inviaValutazione = async () => {
     try {
-      await api.sendFeedback(id, stelle);
+      await api.inviaFeedback(id, stelle);
       notify("Feedback inviato!");
       ricarica();
     } catch (err: any) {
@@ -140,7 +140,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const salvaModifica = async (e: any) => {
     e.preventDefault();
     try {
-      await api.editTicket(id, { ...editForm, autore: user.username });
+      await api.modificaTicket(id, { ...editForm, autore: user.username });
       notify("Ticket aggiornato");
       setModifica(false);
       ricarica();
@@ -152,7 +152,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //archivio un ticket risolto: esce dalla lista attiva e finisce nella sezione archivio
   const archivia = async () => {
     try {
-      await api.archiveTicket(id);
+      await api.archiviaTicket(id);
       notify("Ticket archiviato");
       onClose();
     } catch (err: any) {
