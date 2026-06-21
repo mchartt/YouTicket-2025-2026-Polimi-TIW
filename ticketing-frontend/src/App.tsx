@@ -9,29 +9,29 @@ export default function App() {
   const [msg, setMsg] = useState(""); 
 
   useEffect(() => {
-    const saved = localStorage.getItem("utente");
+    const saved = sessionStorage.getItem("utente");
     if (saved) setUser(JSON.parse(saved));
   }, []);
 
 
-  //RICORDATI: localStorage è un oggetto che permette di salvare dati nel browser dell'utente,
-  //  in modo che siano disponibili anche dopo la chiusura del browser o il refresh della pagina.
+  //RICORDATI: sessionStorage è un oggetto che permette di salvare dati nel browser dell'utente,
+  //  in modo che siano disponibili fino alla chiusura della scheda o del browser.
   //ESEMPIO:
-  // - localStorage. setItem("utente", JSON. stringify(u)) - salva l'utente loggato
-  // - localStorage.getItem("utente") - recupera l'utente al refresh della pagina (nel useEffect) 
-  // - localStorage. removeItem("utente") - cancella l'utente al logout
+  // - sessionStorage.setItem("utente", JSON.stringify(u)) - salva l'utente loggato
+  // - sessionStorage.getItem("utente") - recupera l'utente al refresh della pagina (nel useEffect) 
+  // - sessionStorage.removeItem("utente") - cancella l'utente al logout
   //  In questo caso, viene utilizzato per salvare le informazioni dell'utente loggato,
   //  in modo da poterle recuperare al successivo accesso all'applicazione.
 
   //DEFINISCO LE FUNZIONI DI LOGIN, LOGOUT E NOTIFICA CHE SARANNO DISPONIBILI IN TUTTA L'APP TRAMITE IL CONTEXTO AppCtx
   const login = (u: User) => {
-    localStorage.setItem("utente", JSON.stringify(u));
+    sessionStorage.setItem("utente", JSON.stringify(u));
     setUser(u);
   };
 
-  //funzione di logout che rimuove l'utente dal localStorage e setta user a null
+  //funzione di logout che rimuove l'utente dal sessionStorage e setta user a null
   const logout = () => {
-    localStorage.removeItem("utente");
+    sessionStorage.removeItem("utente");
     setUser(null);
   };
 
