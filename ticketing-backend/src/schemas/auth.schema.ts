@@ -8,3 +8,9 @@ export const registerZ = z.object({ //definisco e chiamo lo schema manco fossi A
   email: z.string({ required_error: "email mancante" }).trim().email("email non valida"),
   ruolo: z.enum(["UTENTE", "TECNICO"], { errorMap: () => ({ message: "ruolo non valido" }) })
 });
+
+//DEFINIZIONE SCHEMA LOGIN
+export const loginZ = z.object({
+  username: z.string({ required_error: "username mancante" }).trim().min(1, "username mancante"),
+  password: z.string({ required_error: "password mancante" }).min(8, "password troppo corta (minimo 8 caratteri)")
+});
