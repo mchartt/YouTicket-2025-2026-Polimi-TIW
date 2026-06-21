@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { db, bootstrapDb } from "./config/db";
-import { routes } from "./routes";
+import { routes } from "./routes/index.routes";
 import { errorHandler } from "./errors/errorHandler"; //importo il middleware globale per gestire gli errori
 import { initWs } from "./websocket-server"; //server WebSocket per la chat in tempo reale
 
@@ -27,7 +27,7 @@ async function main() { //mentre aspetto che il db sia pronto porto avanti altre
 
   const app = express();
   app.disable("etag"); //disabilito ETag così le GET dell'API rispondono sempre 200 con dati freschi (niente 304)
-  app.disable("x-powered-by"); //non espongo il framework usato (header X-Powered-By)
+  app.disable("x-powered-by"); //non espongo il framework usato (header X-Powered-By) questo per evitare di far sapere agli hacker che framework sto usando e quindi quali vulnerabilità potrebbero sfruttare
   const corsOrigin = process.env.CORS_ORIGIN || "*"; //per permettere alle richieste di venire da altre origini
   const origins = corsOrigin === "*" ? "*" : corsOrigin.split(",").map(s => s.trim());
   app.use(cors({ origin: origins })); //per permettere alle richieste di venire da altre origini

@@ -28,11 +28,19 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const [editForm, setEditForm] = useState({ titolo: "", descrizione: "", categoria: "" });
 
 
-  //carico i dettagli del ticket e poi resto in ascolto dei nuovi commenti via WebSocket (niente più polling)
+
+  //------------------------------------------------------------------------
+  //--- ALL'AVVIO ESEGUO USE EFFECT CHE DIPENDE DALL'ID CHE GLI PASSO
+  //------------------------------------------------------------------------
+
+  //---GESTIONE AGGIORNAMENTO TICKET E CARICAMENTO WEB SOCKET---//
+  //1. se è nuovo -> skippo non ho bisogno di caricare nulla, lo devo creare
+  //2. se non è nuovo -> carico i dettagli del ticket e poi mi metto in ascolto dei nuovi commenti via WebSocket (niente più polling)
+
   useEffect(() => {
     if (isNuovo) return; // se è un nuovo ticket non devo fare la richiesta al server
     api.dettagliTicket(id) //richiesta iniziale per prendere i dettagli del ticket
-      .then(setTicket)
+      .then(setTicket) //aggiorno stato ticket con i dati presi dal server così si mostra il dettaglio del ticket
       .catch(() => { // se la richiesta fallisce mostro un messaggio di errore e chiudo il modal
         notify("Errore nel caricamento");
         onClose();
@@ -41,22 +49,30 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     //apro la connessione Socket.IO e dico al server quale chat sto seguendo
     const socket = io(api.serverURL());
     socket.emit("seguiTicket", id);
+    //vado ad emettere l'evento segui ticket con l'id del ticket che sto guardando, così il server sa a chi mandare i nuovi commenti di questo ticket
     socket.on("nuovoCommento", (commento: any) => { //il server mi manda il nuovo commento
-      setTicket(prev => {
+      setTicket(prev => { //controllo che il nuovo commemto non sia duplicato
         if (!prev || prev.commenti.some(c => c.id === commento.id)) return prev; //evito i doppioni
-        return { ...prev, commenti: [...prev.commenti, commento] };
+        return { ...prev, commenti: [...prev.commenti, commento] }; //lo agggiungo alla lista dei commenti della conversazione
+        //aggiungo il nuovo commento alla lista dei commenti del ticket, così si aggiorna in tempo reale senza ricaricare tutta la pagina
       });
     });
     return () => { socket.disconnect(); }; //chiudo la connessione quando esco dal ticket
   }, [id]);
 
+  //------------------------------------------------------------------------
+  //--- FUNZIONI PER GESTIRE LE AZIONI SUL TICKET: CREAZIONE, COMMENTO, CAMBIO STATO, ECC.---//
+  //--- VADO AD INTERAGIRE DIRETTAMENTE CON L'API DEL DB UTILIZZANDO I DATI COMPILATI NEI FORM
+  //------------------------------------------------------------------------
+
   //ricarico i dati del ticket ad ogni operazione
+  //diverso da prima mi serve solo per ricaricare i dati quando faccio piccole modifiche
   const ricarica = async () => {
     const ticketAggiornato = await api.dettagliTicket(id);
     setTicket(ticketAggiornato);
   };
 
-  //funzione per creare un nuovo ticket, prende i dati dal form e li invia al server
+  //funzione per creare un nuovo ticket, prende i dati dal form e li invia al server tramite API
   const creaTicket = async (e: any) => {
     e.preventDefault();
     try {
@@ -99,6 +115,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     }
   };
 
+  //funzione per cambiare priorità prendendola dal form e inviandola al server
   const cambiaPriorita = async (priorita: string) => {
     try {
       await api.changePriority(id, priorita, user.username);
@@ -109,6 +126,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     }
   };
 
+  //funzione per cambiare lo stato del ticket da IN ATTESA a PRESO IN CARICO
   const prendiInCarico = async () => {
     try {
       await api.takeCharge(id, user.username);
@@ -119,6 +137,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     }
   };
 
+  //funzione per inviare la valutazione sula risoluzione del ticket a partire dai dati del form
   const inviaValutazione = async () => {
     try {
       await api.inviaFeedback(id, stelle);
@@ -171,11 +190,18 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       setAllegatiNuovi(prev => [...prev, { nomeFile: file.name, tipo: file.type, dati: reader.result }]);
     };
     reader.readAsDataURL(file);
-    e.target.value = ""; //resetto l'input così posso ricaricare lo stesso file
+    e.target.value = ""; //resetto l'input così posso ricaricare un altro file
   };
 
   //tolgo un allegato dalla lista prima di inviare la richiesta
+  //prendo in input l'allegato e modifico lo stato dell'array degli allegati
+  //eliminando eventuali allegati uguali a quello preso in input
   const eliminaAllegato = (allegato: any) => setAllegatiNuovi(prev => prev.filter(a => a !== allegato));
+
+  //------------------------------------------------------------------------
+  //--- FLAG DA USARE NEL RENDER PER MOSTRARE O
+  // NASCONDERE CERTI ELEMENTI IN BASE AL RUOLO, STATO DEL TICKET, ECC.---//
+  //------------------------------------------------------------------------
 
   const risolto = ticket?.stato === "RISOLTO";
   //SE SONO UN UTENTE, IL TICKET È RISOLTO, SONO L'AUTORE DEL TICKET E NON HO ANCORA LASCIATO UNA VALUTAZIONE ALLORA POSSO LASCIARLA, ALTRIMENTI NO
@@ -217,7 +243,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
 
         ) : !ticket ? (
           <div className="modal-body">Caricamento...</div>
-          //non rimango bloccato all'infinito se non carico i dati o ci sono problemi il modale si chiude dopo qualche secondo grazie alla notifica di errore
+          //non rimango bloccato all'infinito se non carico i dati o ci sono problemi il modale si chiude subito
           //Vatti a vedere lo useEffect che hai scritto sopra
         ) : (
           <div className="modal-body p-0">
@@ -327,7 +353,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
                           <span key={n} style={{ fontSize: 22, color: n <= ticket.valutazione! ? "var(--bs-warning)" : "var(--bs-border-color)" }}>&#9733;</span>
                         ))}
                       </span>
-                    ) : flagSePossoLasciareValutazione ? ( //solo se utente e stato risolto
+                    ) : flagSePossoLasciareValutazione ? ( //solo se utente ed il ticket è stato risolto
                       <>
                         <span> {/* valutazione sottoforma di stelle */}
                           {[1, 2, 3, 4, 5].map(n => (

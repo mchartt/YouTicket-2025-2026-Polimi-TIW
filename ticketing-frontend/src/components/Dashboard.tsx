@@ -23,7 +23,7 @@ export default function Dashboard() {
   //setTickets(prev => prev.map(t => t.id === id ? updatedTicket : t));
 
 
-  const [tickets, setTickets] = useState<Ticket[]>([]); 
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [categorie, setCategorie] = useState<any[]>([]);
 
   const [filtroStato, setFiltroStato] = useState("");
@@ -48,14 +48,21 @@ export default function Dashboard() {
   };
 
    /* Serve a costruire la query string per filtrare i ticket in base ai filtri selezionati.
-    URLSearchParams è una classe built-in di JavaScript che permette di creare e manipolare query string in modo semplice e sicuro, 
-    evitando problemi di encoding o concatenazione manuale. 
+    URLSearchParams è una classe built-in di JavaScript che permette di creare e manipolare query string in modo semplice e sicuro,
+    evitando problemi di encoding o concatenazione manuale.
     Esempio:
     const params = new URLSearchParams();
     params.append("stato", "aperto");
     params.toString(); // → "stato=aperto"
    */
-  const caricaDati = async () => {
+
+  //--------------------------------------------------------
+  //---FILTRO CUSTOM PER MOSTRARE I TICKET SELEZIONATI -----
+  //--------------------------------------------------------
+
+  //CON URLSearchAPrams costruisco la query
+  //ANDIAMO A RICHIEDERE I TICKET ALL'API IN BASE AI FILTRI SELEZIONATI, ALLA VISTA (ATTIVI O ARCHIVIO) E AL RUOLO DELL'UTENTE
+  const caricaDatiFiltrati = async () => {
     try {
       const params = new URLSearchParams(); //creo un nuovo oggetto URLSearchParams per costruire la query string
       if (filtroStato) params.append("stato", filtroStato); //"Esempio .../stato="IN_ATTESA"
@@ -66,31 +73,37 @@ export default function Dashboard() {
       params.append("archiviato", vista === "archivio" ? "true" : "false"); //archivio o ticket attivi
       if (user.ruolo === "UTENTE") params.append("autore", user.username); //se l'utente è un utente normale, filtro per l'autore in modo che veda solo i suoi ticket
 
+      //FACCIO DUE RICHIESTE IN PARALLELO CON Promise.all:
       const [listaTickets, listaCat] = await Promise.all([
         api.tickets(params.toString()), //richiesta 1 faccio una fetch per prendere i ticket filtrati
-        categorie.length === 0 ? api.categorie() : Promise.resolve(categorie) //richiesta 2 prendo le categorie solo se non le ho già caricate, altrimenti risolvo subito con quelle già in stato
+        categorie.length === 0 ? api.categorie() : Promise.resolve(categorie)
+        //richiesta 2 prendo le categorie solo se non le ho già caricate, altrimenti risolvo subito con quelle già in stato
       ]);
+      //A QUESTO PUNTO AVRO OTTENUTO LA RISPOSTA DALL'API CON I TICKET FILTRATI E LE CATEGORIE (SE NON LE AVEVO GIA')
 
-      setTickets(listaTickets); //aggiorno lo stato dei ticket con quelli presi dalla richiesta
+      setTickets(listaTickets); //aggiorno lo stato dell'array dei ticket con quelli presi dalla richiesta
       if (categorie.length === 0) setCategorie(listaCat);  //se non avevo già le categorie, aggiorno lo stato con quelle prese dalla richiesta
-
-      if (user.ruolo === "TECNICO") { //il tecnico vede la media delle valutazioni dei suoi ticket e di quelli del team
-        api.stats(user.username).then(setStatsMie).catch(() => {});
-        api.stats().then(setStatsTeam).catch(() => {});
+      // SE POI SONO UN TECNICO VOGLIO ANCHE LE STATISTICHE DELLE VALUTAZIONI DEI MIEI TICKET E DI QUELLE DEL TEAM
+      if (user.ruolo === "TECNICO") {
+        api.stats(user.username).then(setStatsMie).catch(() => {}); //MIE STATISTICHE
+        api.stats().then(setStatsTeam).catch(() => {}); //STATISTICHE TEAM
       }
     } catch {
       notify("Errore nel caricamento dei dati");
     }
   };
 
-  
+
   //estraggo la lista dei tecnici dai ticket per popolare il filtro tecnico,
   // uso Set per avere solo valori unici e filtro i ticket che hanno tecnico assegnato
   const tecnici = [...new Set(tickets.map(t => t.tecnico).filter(Boolean))] as string[];
 
-  useEffect(() => { caricaDati(); }, [filtroStato, filtroCategoria, filtroPriorita, filtroTecnico, ricerca, vista]);
+  //USO USE EFFECT PER ANDARE DIRE AL BROWSER OGNI QUALVOLTA CAMBIA UNA DIPENDENZA
+  //AGGIORNATI
+  useEffect(() => { caricaDatiFiltrati(); }, [filtroStato, filtroCategoria, filtroPriorita, filtroTecnico, ricerca, vista]);
 
   //--Definisco il colore del bordo del ticket a seconda dello stato--
+  //PRENDO IN INPUT IL TICKET ED IN BASE AL SUO STATO RITORNO UN COLORE DIVERSO
   const colore = (t: Ticket) => {
     if (t.stato === "RISOLTO") return "#16a34a";
     if (t.stato === "IN_LAVORAZIONE") return "#919191";
@@ -100,7 +113,8 @@ export default function Dashboard() {
   };
 
   //--Statistiche per i badge in alto--
-  const aperti   = tickets.filter(t => t.stato !== "RISOLTO").length; 
+  //PRIMA FILTRO PER LO STATO POI IN BASE A QUELLO CONTO IL NUMERO CON LENGTH.
+  const aperti   = tickets.filter(t => t.stato !== "RISOLTO").length
   const inAttesa = tickets.filter(t => t.stato === "IN_ATTESA").length;
   const inLav    = tickets.filter(t => t.stato === "PRESO_IN_CARICO" || t.stato === "IN_LAVORAZIONE").length;
   const risolti  = tickets.filter(t => t.stato === "RISOLTO").length;
@@ -108,7 +122,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="card mb-4 shadow-sm">
-        <div className="card-body d-flex justify-content-between align-items-center flex-wrap gap-2"> 
+        <div className="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
           {/* card = mostra un box con bordo bianco, shadow-sm = aggiunge un'ombra leggera, mb-4 = margin bottom,
           card-body = aggiunge padding interno standard del contenuto della card
           d-flex = rende il div un flex container — i suoi figli si dispongono in riga (o colonna) invece che impilati a blocchi
@@ -127,6 +141,7 @@ export default function Dashboard() {
             //se ticketAperto è null → non mostro il modal
             //se ticketAperto è -1 → mostro il modal con campi vuoti per creare un nuovo ticket
             //se ticketAperto è un id valido → mostro il modal con i dettagli del ticket corrispondente
+            //POI SI OCCUPA DI MOSTRARE LA CREAZIONE O DETTAGLI DEL TICKET --> TIcketModal passandogli come prop l'id da visualizzare
           )}
         </div>
       </div>
@@ -175,7 +190,7 @@ export default function Dashboard() {
         </div>
 
         {/* SELECT PER FILTRARE IN BASE ALLO STATO */}
-        <select className="form-select" style={{ maxWidth: 200 }} value={filtroStato} onChange={e => setFiltroStato(e.target.value)}> 
+        <select className="form-select" style={{ maxWidth: 200 }} value={filtroStato} onChange={e => setFiltroStato(e.target.value)}>
           {/* e.target riferisce al select,
           e.target.value riferisce al suo valore e lo imposto come filtroStato */}
           <option value="">Tutti gli stati</option>
@@ -200,7 +215,7 @@ export default function Dashboard() {
           <option value="URGENTE">Urgente</option>
         </select>
 
-    
+
         {/* SELECT PER CHI FILTRARE IN BASE AL TECNICO*/}
         {user.ruolo === "TECNICO" && (
           <select className="form-select" style={{ maxWidth: 200 }} value={filtroTecnico} onChange={e => setFiltroTecnico(e.target.value)}>
@@ -247,7 +262,7 @@ export default function Dashboard() {
           id={ticketAperto}
           iniziale={tickets.find(t => t.id === ticketAperto)}
           cats={categorie}
-          onClose={() => { setTicketAperto(null); caricaDati(); }} //alla chiusura reimposto ticketAperto a null 
+          onClose={() => { setTicketAperto(null); caricaDatiFiltrati(); }} //alla chiusura reimposto ticketAperto a null
           // e ricarico i dati per aggiornare metti che ho fatto modifiche al ticket
         />
       )}

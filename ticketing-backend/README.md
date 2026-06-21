@@ -76,11 +76,11 @@ Il codice è organizzato per dominio (auth, categorie, tickets), con i vari live
 
 ```
 src/
-  index.ts                 → avvio di Express, CORS, middleware globali e gestione errori
+  index.routes.ts                 → avvio di Express, CORS, middleware globali e gestione errori
   config/
     db.ts                  → client Prisma e creazione delle categorie iniziali (bootstrapDb)
   routes/
-    index.ts               → aggrega le route e le monta sotto /auth, /categorie, /tickets
+    index.routes.ts               → aggrega le route e le monta sotto /auth, /categorie, /tickets
     auth.routes.ts         → route del dominio auth
     categorie.routes.ts    → route del dominio categorie
     tickets.routes.ts      → route del dominio tickets

@@ -7,7 +7,7 @@ export default function Auth() {
 
   const [isLoginAs, setIsLogin] = useState(true); //stato per sapere se siamo in modalità login o registrazione
 
-  const [form, setForm] = useState({ 
+  const [form, setForm] = useState({
     username: "", password: "", nome: "", cognome: "", email: "", ruolo: "UTENTE"
   }); //stato per tenere traccia dei valori del form di login/registrazione
 
@@ -15,23 +15,23 @@ export default function Auth() {
 
   const [mostraPassword, setMostraPassword] = useState(false); //true = password in chiaro, false = pallini
 
-  //funzione per aggiornare i campi del form, 
-  // prende in input il nome del campo e il suo valore e aggiorna lo stato form di conseguenza
-  const set = (campo: string, valore: string) => setForm({ ...form, [campo]: valore }); 
+  //funzione per aggiornare i campi del form,
+  // prende in input il nome del campo ed il suo valore e poi aggiorna lo State del form di conseguenza
+  const set = (campo: string, valore: string) => setForm({ ...form, [campo]: valore });
   //[campo]: valore è una sintassi per aggionare il campo specifico al click/inserimento
 
-  //definisco funzione submit così al click di invio viene chiamata 
+  //definisco funzione submit così al click di invio viene chiamata
   const submit = async (e: any) => {
     e.preventDefault(); //previene comportamenti di default eventi
     //nel caso del submit di un form, previene il refresh della pagina all'invio
-    setErrore(""); //resetto il messaggio di errore prima di fare la richiesta, 
+    setErrore(""); //resetto il messaggio di errore prima di fare la richiesta,
     // così se c'è un nuovo errore mostro solo quello più recente
 
     try {
-      const ottieniDatiDaLoginOppureRegistrazione = isLoginAs // a seconda se siamo in modalità login o registrazione 
+      const ottieniDatiDaLoginOppureRegistrazione = isLoginAs // a seconda se siamo in modalità login o registrazione
       // chiamo l'API corrispondente con i dati del form
         ? await api.login({ username: form.username, password: form.password })
-        : await api.register({ 
+        : await api.register({
             nome: form.nome,
             cognome: form.cognome,
             email: form.email,
@@ -65,18 +65,18 @@ export default function Auth() {
           {errore && <div className="alert alert-danger">{errore}</div>}
 
           <form onSubmit={submit}>
-            {isLoginAs ? ( //se l'utente è in modalità login mostro solo il campo username 
+            {isLoginAs ? ( //se l'utente è in modalità login mostro solo il campo username
             // altrimenti mostro i campi nome, cognome, email e ruolo per registrazione
               <input className=" form-control mb-3" placeholder="Username" autoComplete="off"
                 value={form.username} onChange={e => set("username", e.target.value)} required />
             ) : (
-              <> {/* nel ternario posso ritornare un solo elemento quindi uso un fragment <>...</> 
+              <> {/* nel ternario posso ritornare un solo elemento quindi uso un fragment <>...</>
               per raggruppare più elementi senza aggiungere un nodo extra al DOM*/}
                 <div className="form-text mb-2">Ruolo</div>
-                {/* se volessi mettere ruolo orizzontalmente usa col-auto 
+                {/* se volessi mettere ruolo orizzontalmente usa col-auto
                 //prende lo la larghezza del contenuto, col-auto per il label e col per il select */}
                 <select className="form-select" value={form.ruolo} onChange={e => set("ruolo", e.target.value)}>
-                  <option value="UTENTE">Studente / Docente</option> 
+                  <option value="UTENTE">Studente / Docente</option>
                   <option value="TECNICO">Tecnico IT</option>
                 </select>
                 <div className="form-text mb-3">
@@ -89,7 +89,7 @@ export default function Auth() {
                       value={form.nome} onChange={e => set("nome", e.target.value)} required />
                     <div className="form-text">Es. Mario</div>
                   </div>
-                  <div className="col"> {/* prendo metà spazio*/} 
+                  <div className="col"> {/* prendo metà spazio*/}
                     <input className="form-control" placeholder="Cognome"
                       value={form.cognome} onChange={e => set("cognome", e.target.value)} required />
                       {/* ogni volta che l'utente scrive qualcosa nel campo, aggiorno lo stato form con il nuovo */}

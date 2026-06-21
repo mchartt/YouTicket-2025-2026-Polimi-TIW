@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 //Colonna della conversazione: lista dei messaggi e box per inviarne di nuovi
-export default function Conversazione({ commenti, mioUsername, puoScrivere, commento, setCommento, onInvia }: any) {
+export default function Conversazione({ commenti, mioUsername, puoScrivere: flagPuoScrivere, commento, setCommento, onInvia }: any) {
   const chat = useRef<HTMLDivElement>(null);
 
   // porto la conversazione in fondo quando arriva un commento
@@ -33,7 +33,7 @@ export default function Conversazione({ commenti, mioUsername, puoScrivere, comm
       </div>
 
       {/* se posso scrivere mostro il box per inviare un messaggio (Invio o Ctrl+Invio) */}
-      {puoScrivere && (
+      {flagPuoScrivere && (
         <div className="p-3 border-top">
           <div className="input-group">
             <input className="form-control" placeholder="Scrivi un messaggio... (Invio per inviare)"

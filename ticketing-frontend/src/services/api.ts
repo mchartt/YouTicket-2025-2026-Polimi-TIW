@@ -2,7 +2,7 @@ const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 
 //funzione generica per fare richieste HTTP all'API, gestendo errori e parsing della risposta
-async function req(path: string, method = "GET", body?: any) { 
+async function req(path: string, method = "GET", body?: any) {
   try {
     const res = await fetch(BASE + path, {
       method, //metodo HTTP (GET, POST, PATCH, DELETE, ecc.)
@@ -26,7 +26,7 @@ async function req(path: string, method = "GET", body?: any) {
     }
 
     return res.status !== 204 ? res.json() : null; //se la risposta non è 204 (No Content) allora ritorno il JSON, altrimenti ritorno null
-  } catch (err: any) { //prendo quaalsiasi errore che può essere generato da fetch o dal parsing della risposta
+  } catch (err: any) { //prendo qualsiasi errore che può essere generato da fetch o dal parsing della risposta
     if (err.message?.includes("Failed to fetch") || err.message?.includes("NetworkError")) { //se errore di connessione (es. server non raggiungibile, timeout, ecc.)
       throw new Error("Errore di connessione: verifica la tua connessione internet o il server API."); //lancio un nuovo errore con un messaggio più chiaro
     }

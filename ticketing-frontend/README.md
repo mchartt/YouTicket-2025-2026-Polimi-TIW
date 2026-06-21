@@ -29,7 +29,7 @@ Il codice è organizzato in cartelle per tipo (componenti, servizi, tipi, ecc.):
 | `src/services/api.ts` | Funzioni `fetch` verso il backend. Usa `VITE_API_BASE_URL` se presente. |
 | `src/context/AppContext.ts` | Context React (`AppCtx`) per condividere dati tra i componenti senza passarli come prop. |
 | `src/constants/ticketStatus.ts` | Mappa stato del ticket → classi Bootstrap per i colori dei badge. |
-| `src/types/index.ts` | Tipi TypeScript condivisi tra i componenti. |
+| `src/types/index.routes.ts` | Tipi TypeScript condivisi tra i componenti. |
 | `public/logo-ticket.svg` | Logo dell'app, usato come favicon. |
 | `vercel.json` | Configurazione Vercel per build Vite e fallback SPA su `index.html`. |
 
