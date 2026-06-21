@@ -1,5 +1,6 @@
 import { db } from "../config/db";
 import { ApiError } from "../errors/ApiError";
+import { inviaCommento } from "../websocket-server";
 
 //DEFINISCO DEGLI UTILS
 const statoVisibile = (t: any) => t.stato === "CHIUSO" ? { ...t, stato: "RISOLTO" } : t; //funzione per convertire lo stato CHIUSO in RISOLTO
@@ -131,7 +132,9 @@ export async function aggiungiCommento(ticketId: number, testo: string, autore: 
   if (!t) throw new ApiError(404, "Ticket non trovato");
   if (autore !== t.autore && autore !== t.tecnico) throw new ApiError(403, "Non puoi commentare questo ticket"); //solo autore o tecnico assegnato
   await db.ticket.update({ where: { id: ticketId }, data: { dataAggiornamento: new Date().toISOString() } }); //per aggiornare la data di aggiornamento del ticket
-  return db.ticketComment.create({ data: { ticketId, testo, autoreUsername: autore, creatoIl: new Date().toISOString() } }); //per creare un nuovo commento
+  const commento = await db.ticketComment.create({ data: { ticketId, testo, autoreUsername: autore, creatoIl: new Date().toISOString() } }); //per creare un nuovo commento
+  inviaCommento(ticketId, commento); //lo mando in tempo reale a chi sta guardando questo ticket
+  return commento;
 }
 
 export async function aggiungiAllegato(ticketId: number, data: any) { //per allegare un file a un ticket (salvato come data URL)
