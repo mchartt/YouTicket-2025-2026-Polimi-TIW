@@ -84,7 +84,10 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       });
       //ora che il ticket esiste e ha un id, carico gli allegati scelti nel form
       for (const allegato of allegatiNuovi) {
-        await api.aggiungiAllegato(nuovo.id, allegato);
+        const formData = new FormData();
+        formData.append("file", allegato.file);
+        // l'API invierà FormData automaticamente con il content-type multipart
+        await api.aggiungiAllegato(nuovo.id, formData);
       }
       notify("Richiesta inviata!");
       onClose(); //chiudo il modal e torno alla lista dei ticket
@@ -179,17 +182,13 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
     }
   };
 
-  //leggo il file scelto, lo converto in data URL e lo aggiungo alla lista della nuova richiesta
+  //leggo il file scelto e lo aggiungo alla lista della nuova richiesta come File puro
   const caricaAllegato = (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { notify("File troppo grande (max 5MB)"); return; }
     if (allegatiNuovi.length >= 3) { notify("Massimo 3 allegati"); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAllegatiNuovi(prev => [...prev, { nomeFile: file.name, tipo: file.type, dati: reader.result }]);
-    };
-    reader.readAsDataURL(file);
+    setAllegatiNuovi(prev => [...prev, { nomeFile: file.name, tipo: file.type, file }]);
     e.target.value = ""; //resetto l'input così posso ricaricare un altro file
   };
 

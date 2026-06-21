@@ -1,6 +1,15 @@
 import { Router } from "express";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import * as ticketsController from "../controllers/tickets.controller";
+import multer from "multer";
+import fs from "fs";
+
+// Assicuriamoci che la cartella uploads esista
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
+const upload = multer({ dest: "uploads/" });
 
 export const ticketsRoutes = Router(); //creo un'istanza di Router per definire le route
 
@@ -16,5 +25,5 @@ ticketsRoutes.patch("/:id/assegna", asyncHandler(ticketsController.prendiInCaric
 ticketsRoutes.patch("/:id/archivia", asyncHandler(ticketsController.archiviaTicket));
 ticketsRoutes.patch("/:id", asyncHandler(ticketsController.modificaTicket));
 ticketsRoutes.post("/:id/commenti", asyncHandler(ticketsController.aggiungiCommento));
-ticketsRoutes.post("/:id/allegati", asyncHandler(ticketsController.aggiungiAllegato));
+ticketsRoutes.post("/:id/allegati", upload.single("file"), asyncHandler(ticketsController.aggiungiAllegato));
 ticketsRoutes.post("/:id/feedback", asyncHandler(ticketsController.inviaFeedback));

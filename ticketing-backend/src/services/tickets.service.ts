@@ -138,7 +138,6 @@ export async function aggiungiAllegato(ticketId: number, data: any) { //per alle
   const t = await db.ticket.findUnique({ where: { id: ticketId } });
   if (!t) throw new ApiError(404, "Ticket non trovato");
   if (!data.nomeFile || !data.tipo || !data.dati) throw new ApiError(400, "Allegato non valido"); //servono nome, tipo e contenuto del file
-  if (data.dati.length > 7000000) throw new ApiError(400, "File troppo grande (max 5MB)"); //~5MB una volta convertito in base64
   //conto e creo nella stessa transazione serializzabile: così due upload simultanei non superano i 3 allegati
   const a = await db.$transaction(async (tx) => {
     if (await tx.allegato.count({ where: { ticketId } }) >= 3) throw new ApiError(400, "Massimo 3 allegati per ticket"); //limite di 3 allegati

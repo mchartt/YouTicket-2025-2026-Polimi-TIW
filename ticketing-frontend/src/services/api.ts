@@ -6,8 +6,8 @@ async function req(path: string, method = "GET", body?: any) {
   try {
     const res = await fetch(BASE + path, {
       method, //metodo HTTP (GET, POST, PATCH, DELETE, ecc.)
-      headers: body ? { "Content-Type": "application/json" } : undefined, //il Content-Type serve solo quando c'è un body (POST/PATCH); su GET/DELETE lo ometto
-      body: body ? JSON.stringify(body) : undefined //se body è presente lo trasformo in JSON, altrimenti lo lascio undefined
+      headers: (body && !(body instanceof FormData)) ? { "Content-Type": "application/json" } : undefined,
+      body: (body && !(body instanceof FormData)) ? JSON.stringify(body) : body
     });
 
     if (!res.ok) { //se la risposta non è ok (status code 4xx o 5xx) allora lancio un errore
