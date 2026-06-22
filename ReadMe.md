@@ -1,3 +1,5 @@
+![YouTicket - Assistenza IT semplice ed immediata](preview.png)
+
 # YouTicket - Progetto TIW
 
 Progetto per il corso di **TIW** (Tecnologie Informatiche per il Web) - Politecnico di Milano.
@@ -63,10 +65,10 @@ Se vuoi cambiare l'indirizzo del backend, imposta la variabile `VITE_API_BASE_UR
 ### Oppure con Docker Compose
 
 ```bash
-docker-compose up --build
+docker compose up -d --build
 ```
 
-Fa partire tutto insieme: database PostgreSQL, backend e frontend.
+Fa partire tutto insieme: database PostgreSQL, backend e frontend. Il frontend e' su http://localhost, il backend su http://localhost:8080.
 
 ---
 
@@ -140,6 +142,8 @@ Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le s
 
 - Auto-assegnazione attivabile o disattivabile dal singolo tecnico ✓
 - Modifica e archiviazione dei ticket ✓
+- Gestione delle categorie da parte del tecnico: creazione, rinomina ed eliminazione, dove l'eliminazione e' consentita solo se i ticket di quella categoria sono tutti risolti o non ce ne sono ✓
+- Autenticazione con token JWT e autorizzazione per ruolo: le operazioni riservate ai tecnici sono protette lato server ✓
 - Validazione delle email per ruolo: @polimi.it per gli utenti, @service.polimi.it per i tecnici ✓
 - Deploy con Docker Compose e pipeline CI ✓
 
@@ -149,4 +153,4 @@ Del livello 3 sono coperti gli aggiornamenti in tempo reale, gli allegati e le s
 
 Per provare in fretta l'app puoi usare le credenziali di test scritte all'inizio di questo file. Per vedere liste, ticket e commenti serve comunque avere il backend avviato.
 
-Per quanto riguarda la sicurezza: questo e' un progetto didattico, non è stato quindi implementato JWT. Le limitazioni principali sono documentate nel README del backend.
+Per quanto riguarda la sicurezza: le password sono hashate con bcrypt e l'accesso alle API e' protetto da token JWT, con autorizzazione per ruolo sulle operazioni riservate ai tecnici. Restano alcune limitazioni tipiche di un progetto didattico, documentate nel README del backend.

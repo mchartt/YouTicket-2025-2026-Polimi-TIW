@@ -26,14 +26,17 @@ Crea il file `.env` a partire dall'esempio:
 cp .env.example .env
 ```
 
-Poi apri `.env` e aggiusta `DATABASE_URL` con i tuoi dati:
+Poi apri `.env` e aggiusta i valori con i tuoi dati:
 
 ```env
 PORT=8080
 HOST=0.0.0.0
 CORS_ORIGIN=http://localhost:4200
 DATABASE_URL=postgresql://postgres:password@localhost:5432/ticketdb
+JWT_SECRET=                 # obbligatorio: una stringa lunga e casuale per firmare i token
 ```
+
+`JWT_SECRET` è **obbligatorio**: se manca, il backend si rifiuta di partire (così non si firmano token con un secret noto).
 
 ---
 
@@ -70,13 +73,36 @@ Il server risponde su `http://localhost:8080` per default.
 
 ---
 
+## Avvio con Docker (stack completo)
+
+Nella **root del progetto** c'è un `docker-compose.yml` che avvia l'intero stack — database, backend e frontend — con un solo comando:
+
+```bash
+docker compose up -d --build
+```
+
+- `db` → PostgreSQL sulla porta `5432` (dati persistiti nel volume `db_data`)
+- `backend` → API su `http://localhost:8080` (all'avvio esegue `prisma db push` e poi parte)
+- `frontend` → app su `http://localhost`
+
+Il `JWT_SECRET` del backend è impostato fra le `environment` del servizio nel compose. Per fermare tutto: `docker compose down` (i dati restano), oppure `docker compose down -v` per azzerare anche il volume del database.
+
+Dati demo opzionali (utenti e ticket di esempio, password `Password123!`):
+
+```bash
+cd ticketing-backend && npm run db:seed
+```
+
+---
+
 ## Come è strutturato
 
 Il codice è organizzato per dominio (auth, categorie, tickets), con i vari livelli separati in cartelle:
 
 ```
 src/
-  index.routes.ts                 → avvio di Express, CORS, middleware globali e gestione errori
+  index.ts                 → avvio di Express, CORS, middleware globali e gestione errori
+  websocket-server.ts      → server Socket.IO per i commenti in tempo reale
   config/
     db.ts                  → client Prisma e creazione delle categorie iniziali (bootstrapDb)
   routes/
@@ -96,6 +122,7 @@ src/
     auth.schema.ts         → validazione input con Zod
   middlewares/
     asyncHandler.ts        → wrapper che cattura gli errori asincroni
+    requireAuth.ts         → verifica il token JWT (requireAuth) e il ruolo (requireRole)
   errors/
     ApiError.ts            → errore applicativo con status code
     errorHandler.ts        → middleware globale di gestione errori
@@ -105,46 +132,64 @@ Il flusso di una richiesta è: **route → controller → service**. Le route so
 
 ---
 
+## Autenticazione e autorizzazione
+
+Login e registrazione restituiscono un **token JWT** (firmato con `JWT_SECRET`, valido 7 giorni) che contiene `id`, `username` e `ruolo`. Tutte le altre route richiedono il token nell'header:
+
+```http
+Authorization: Bearer <token>
+```
+
+Il middleware `requireAuth` verifica il token e mette i dati dell'utente in `req.user`; `requireRole("TECNICO")` limita una route ai soli tecnici. **L'identità non si prende mai dal body**: chi è l'autore di un ticket, chi lo prende in carico o chi commenta è sempre l'utente del token.
+
+Nelle tabelle sotto: 🔑 = richiede il token, 🔧 = riservata ai tecnici.
+
+---
+
 ## Endpoint esposti
 
-Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` che risponde `{ "ok": true }`.
+Tutte le route sono montate sotto `/api`. Oltre a queste c'è `GET /health` (pubblica) che risponde `{ "ok": true }`.
 
 **Auth — `/api/auth`**
 
-| Metodo | Path | Cosa fa |
-|--------|------|---------|
-| `POST` | `/register` | Registrazione utente o tecnico |
-| `POST` | `/login` | Login |
-| `PATCH` | `/auto-assegnazione` | Attiva/disattiva l'auto-assegnazione per un tecnico |
+| Metodo | Path | Auth | Cosa fa |
+|--------|------|------|---------|
+| `POST` | `/register` | — | Registrazione utente o tecnico (ritorna token) |
+| `POST` | `/login` | — | Login (ritorna token) |
+| `PATCH` | `/auto-assegnazione` | 🔑 🔧 | Attiva/disattiva l'auto-assegnazione per il tecnico loggato |
 
 **Categorie — `/api/categorie`**
 
-| Metodo | Path | Cosa fa |
-|--------|------|---------|
-| `GET` | `/` | Elenco categorie (`?attive=true` per le sole attive) |
-| `POST` | `/` | Crea una categoria |
-| `PATCH` | `/:id/attivo` | Attiva/disattiva una categoria |
-| `DELETE` | `/:id` | Elimina una categoria |
+| Metodo | Path | Auth | Cosa fa |
+|--------|------|------|---------|
+| `GET` | `/` | 🔑 | Elenco categorie |
+| `POST` | `/` | 🔑 🔧 | Crea una categoria |
+| `PATCH` | `/:id` | 🔑 🔧 | Rinomina una categoria |
+| `DELETE` | `/:id` | 🔑 🔧 | Elimina una categoria (solo se tutti i suoi ticket sono risolti o non ne ha) |
 
 **Tickets — `/api/tickets`**
 
-| Metodo | Path | Cosa fa |
-|--------|------|---------|
-| `GET` | `/search` | Lista ticket con filtri (`categoria`, `stato`, `priorita`, `tecnico`, `autore`) |
-| `GET` | `/stats/feedback` | Statistiche dei feedback |
-| `GET` | `/:id/allegati/:allegatoId/download` | Scarica un allegato |
-| `GET` | `/:id` | Dettaglio di un ticket |
-| `POST` | `/` | Crea un ticket (risponde 201) |
-| `PATCH` | `/:id/priorita` | Cambia la priorità |
-| `PATCH` | `/:id/stato` | Cambia lo stato |
-| `PATCH` | `/:id/assegna` | Presa in carico / assegnazione |
-| `PATCH` | `/:id/archivia` | Archivia un ticket |
-| `PATCH` | `/:id` | Modifica titolo, descrizione e categoria |
-| `POST` | `/:id/commenti` | Aggiunge un commento (notificato in tempo reale via WebSocket) |
-| `POST` | `/:id/allegati` | Aggiunge un allegato |
-| `POST` | `/:id/feedback` | Invia un feedback |
+| Metodo | Path | Auth | Cosa fa |
+|--------|------|------|---------|
+| `GET` | `/search` | 🔑 | Lista ticket con filtri (`categoria`, `stato`, `priorita`, `tecnico`, `autore`) |
+| `GET` | `/stats/feedback` | 🔑 | Statistiche dei feedback |
+| `GET` | `/:id/allegati/:allegatoId/download` | 🔑 | Scarica un allegato |
+| `GET` | `/:id` | 🔑 | Dettaglio di un ticket |
+| `POST` | `/` | 🔑 | Crea un ticket (risponde 201) |
+| `PATCH` | `/:id/priorita` | 🔑 🔧 | Cambia la priorità |
+| `PATCH` | `/:id/stato` | 🔑 🔧 | Cambia lo stato |
+| `PATCH` | `/:id/assegna` | 🔑 🔧 | Presa in carico / assegnazione |
+| `PATCH` | `/:id/archivia` | 🔑 | Archivia un ticket risolto |
+| `PATCH` | `/:id` | 🔑 | Modifica titolo, descrizione e categoria (l'autore, entro 15 minuti) |
+| `POST` | `/:id/commenti` | 🔑 | Aggiunge un commento (notificato in tempo reale via WebSocket) |
+| `POST` | `/:id/allegati` | 🔑 | Aggiunge un allegato (max 3 per ticket) |
+| `POST` | `/:id/feedback` | 🔑 | Invia un feedback a un ticket risolto |
 
 Oltre alle route HTTP, il backend espone un server WebSocket sullo stesso host e porta: alla connessione il client indica quale ticket sta seguendo e riceve in tempo reale i nuovi commenti di quella conversazione.
+
+### Allegati
+
+I file caricati **non vengono salvati nel database**: il file fisico finisce su disco nella cartella `uploads/` (gestita da Multer), mentre nella tabella `allegati` vengono salvati solo i metadati (`nomeFile`, `tipo`, data) e il **percorso** del file nella colonna `dati`. Il download rilegge il file dal disco a partire da quel percorso.
 
 ---
 
@@ -157,18 +202,17 @@ Oltre alle route HTTP, il backend espone un server WebSocket sullo stesso host e
 
 ---
 
-## Limitazioni di sicurezza (importante)
+## Sicurezza
 
-Questo backend è pensato per un corso universitario, non per il business ovviamente.
-
-Sicurezza utilizzata:
+Questo backend è pensato per un corso universitario, ma adotta comunque alcune misure di base:
 
 - Le **password sono hashate con bcrypt**.
+- **Autenticazione con token JWT**: ogni route protetta richiede un `Bearer` token verificato lato server (algoritmo fissato a `HS256`). L'identità viene presa dal token, mai dal body, quindi non è possibile impersonare un altro utente passandone lo username.
+- **Autorizzazione per ruolo**: le operazioni riservate (gestione categorie, cambio stato/priorità, presa in carico, auto-assegnazione) sono protette da `requireRole("TECNICO")`.
+- `JWT_SECRET` è obbligatorio: senza, il backend non parte (niente secret di default hardcoded).
 
-Alcune cose che mancano rispetto a un sistema reale:
+Limiti noti rispetto a un sistema di produzione:
 
-- **Nessuna autenticazione basata su token**: le azioni che richiedono un utente specifico (es. chi prende in carico un ticket) ricevono lo username nel body della richiesta. Non c'è verifica crittografica dell'identità — chiunque raggiunga gli endpoint può impersonare qualsiasi utente.
-
-- Il **CORS** in sviluppo è limitato a `localhost:4200`. Con `CORS_ORIGIN=*` si apre a tutti (solo per test locali).
-
-Per un sistema reale servirebbero JWT o sessioni server-side con cookie `httpOnly`.
+- Il token è un JWT **stateless**: non c'è una blacklist, quindi non è revocabile prima della scadenza (7 giorni).
+- Con `CORS_ORIGIN=*` le richieste sono aperte a qualsiasi origine (comodo per i test locali, da restringere in produzione).
+- Gli allegati sono salvati sul filesystem locale del backend, non su uno storage dedicato.

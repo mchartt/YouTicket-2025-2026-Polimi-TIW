@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import type { Ticket } from "../types";
 import { COLORE_STATO } from "../constants/ticketStatus";
 import TicketModal from "./TicketModal";
+import GestioneCategorie from "./GestioneCategorie";
 
 export default function Dashboard() {
   const { user, notify } = useContext(AppCtx); //prendo i dati dell'utente loggato e la funzione di notifica dal contesto globale AppCtx
@@ -36,13 +37,15 @@ export default function Dashboard() {
 
   const [ticketAperto, setTicketAperto] = useState<number | null>(null);
 
+  const [gestioneCategorie, setGestioneCategorie] = useState(false); //apertura del modal di gestione categorie (solo tecnici)
+
   const [autoAssign, setAutoAssign] = useState<boolean>(user.autoAssegnazione ?? false);
 
   const [mieStatistiche, setStatsMie] = useState<any>(null); //statistiche valutazioni dei miei ticket (tecnico)
   const [statisticheTeam, setStatsTeam] = useState<any>(null); //statistiche valutazioni di tutto il team (tecnico)
 
   const toggleAutoAssign = async (checked: boolean) => {
-    await api.toggleAutoAssegnazione(user.username, checked);
+    await api.toggleAutoAssegnazione(checked);
     setAutoAssign(checked);
     notify(checked ? "Auto-assegnazione attivata" : "Auto-assegnazione disattivata");
   };
@@ -133,6 +136,9 @@ export default function Dashboard() {
             <h2 className="mb-1">Ciao, {user.nome || user.username}!</h2>
             <p className="text-muted mb-0">{aperti} richieste ancora aperte.</p>
           </div>
+          {user.ruolo === "TECNICO" && (
+            <button className="btn btn-outline-primary fw-bold" onClick={() => setGestioneCategorie(true)}><i className="fa-solid fa-tags me-2" />Gestione categorie</button>
+          )}
           {user.ruolo === "UTENTE" && (
             <button className="btn btn-primary fw-bold" onClick={() => setTicketAperto(-1)}><i className="fa-solid fa-plus me-2" />Nuova richiesta</button>
             //uso -1 come id fittizio per indicare che voglio aprire il modal per creare un nuovo ticket,
@@ -259,11 +265,25 @@ export default function Dashboard() {
       {/* ---MODAL PER VISUALIZZARE I DETTAGLI DEL TICKET---*/}
       {ticketAperto !== null && (
         <TicketModal
-          id={ticketAperto}
-          iniziale={tickets.find(t => t.id === ticketAperto)}
-          cats={categorie}
+          ticketId={ticketAperto}
+          ticketIniziale={tickets.find(t => t.id === ticketAperto)}
+          categorie={categorie}
           onClose={() => { setTicketAperto(null); caricaDatiFiltrati(); }} //alla chiusura reimposto ticketAperto a null
           // e ricarico i dati per aggiornare metti che ho fatto modifiche al ticket
+        />
+      )}
+
+      {/* ---MODAL PER LA GESTIONE DELLE CATEGORIE (solo tecnici)---*/}
+      {gestioneCategorie && (
+        <GestioneCategorie
+          onClose={(modificato) => {
+            setGestioneCategorie(false);
+            //se ho creato/rinominato/eliminato categorie ricarico la lista (usata da filtri e form) e i ticket
+            if (modificato) {
+              api.categorie().then(setCategorie).catch(() => {});
+              caricaDatiFiltrati();
+            }
+          }}
         />
       )}
     </div>

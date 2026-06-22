@@ -24,7 +24,6 @@ model Categoria {
   id     Int     @id @default(autoincrement())
   nome   String  @unique
   colore String?
-  attivo Boolean @default(true)
 
   @@map("categorie")
 }

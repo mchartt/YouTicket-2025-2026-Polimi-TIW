@@ -29,6 +29,7 @@ services:
       - PORT=8080
       - NODE_ENV=production
       - CORS_ORIGIN=*
+      - JWT_SECRET=e11f4bac12e43465f548b58f1e5e5683e84b1b298354615b7cde0534a154458561aa86d6e07c0c869a58fe16009e4198
     depends_on:
       db:
         condition: service_healthy

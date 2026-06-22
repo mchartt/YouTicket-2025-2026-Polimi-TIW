@@ -31,10 +31,10 @@ async function main() {
 
   await db.categoria.createMany({
     data: [
-      { nome: "Account", colore: "#0b76d1", attivo: true },
-      { nome: "Hardware", colore: "#16a34a", attivo: true },
-      { nome: "Software", colore: "#7c3aed", attivo: true },
-      { nome: "Rete", colore: "#ea580c", attivo: true }
+      { nome: "Account", colore: "#0b76d1" },
+      { nome: "Hardware", colore: "#16a34a" },
+      { nome: "Software", colore: "#7c3aed" },
+      { nome: "Rete", colore: "#ea580c" }
     ]
   });
 

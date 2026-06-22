@@ -62,16 +62,17 @@ export async function archiviaTicket(id: number) { //sposto nell'archivio un tic
   return db.ticket.update({ where: { id }, data: { archiviato: true, dataAggiornamento: new Date().toISOString() } });
 }
 
-export async function aggiornaStato(id: number, stato: string, chi: string) { //per aggiornare lo stato di un ticket
+export async function aggiornaStato(id: number, stato: string, tecnico: string) { //per aggiornare lo stato di un ticket
   if (!["IN_ATTESA", "PRESO_IN_CARICO", "IN_LAVORAZIONE", "RISOLTO"].includes(stato)) throw new ApiError(400, "Stato non valido"); //se lo stato non è valido, lancio un errore
   const corrente = await db.ticket.findUnique({ where: { id } });
   if (!corrente) throw new ApiError(404, "Ticket non trovato");
-  if (!corrente.tecnico || corrente.tecnico !== chi) throw new ApiError(403, "Solo il tecnico assegnato può cambiare lo stato"); //autorizzazione: deve essere il tecnico del ticket
+  if (!corrente.tecnico || corrente.tecnico !== tecnico) throw new ApiError(403, "Solo il tecnico assegnato può cambiare lo stato"); //autorizzazione: deve essere il tecnico del ticket
   if (corrente.stato === "RISOLTO" || corrente.stato === "CHIUSO") throw new ApiError(400, "Il ticket è già risolto"); //un ticket risolto non si riapre
   if (stato === "IN_LAVORAZIONE" && !corrente.priorita) throw new ApiError(400, "Assegna prima una priorità per passare in lavorazione"); //il ticket va in lavorazione solo dopo aver assegnato la priorità
   if (stato === "RISOLTO" && corrente.stato !== "IN_LAVORAZIONE") throw new ApiError(400, "Il ticket deve prima passare in lavorazione"); //non si può risolvere saltando la fase di lavorazione
-  const t = await db.ticket.update({ where: { id }, data: { stato, dataAggiornamento: new Date().toISOString() } });
-  await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: stato, cambiatoIl: new Date().toISOString(), cambiatoDa: chi } });
+  const now = new Date().toISOString(); //stesso istante per ticket e log di stato
+  const t = await db.ticket.update({ where: { id }, data: { stato, dataAggiornamento: now } });
+  await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: stato, cambiatoIl: now, cambiatoDa: tecnico } });
   return t; //per ottenere il ticket aggiornato
 }
 
@@ -90,8 +91,9 @@ export async function prendiInCarico(id: number, username: string) { //per asseg
   if (t.stato === "RISOLTO" || t.stato === "CHIUSO") throw new ApiError(400, "Non assegnabile"); //se è risolto o chiuso, lancio un errore
   if (t.tecnico && t.tecnico !== username) throw new ApiError(409, "Ticket già preso in carico da un altro tecnico"); //non si può rubare un ticket altrui
   const st = t.stato === "IN_ATTESA" ? "PRESO_IN_CARICO" : (t.stato || "IN_ATTESA"); //se il ticket è in attesa, assegnalo a tecnico, altrimenti mantienilo come è
-  const res = await db.ticket.update({ where: { id }, data: { tecnico: username, stato: st, dataAggiornamento: new Date().toISOString() } });
-  if (st !== t.stato) await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: st, cambiatoIl: new Date().toISOString(), cambiatoDa: username } });
+  const now = new Date().toISOString(); //stesso istante per ticket e log di stato
+  const res = await db.ticket.update({ where: { id }, data: { tecnico: username, stato: st, dataAggiornamento: now } });
+  if (st !== t.stato) await db.ticketStateLog.create({ data: { ticketId: id, statoNuovo: st, cambiatoIl: now, cambiatoDa: username } });
   return res;
 }
 
@@ -137,7 +139,7 @@ export async function aggiungiCommento(ticketId: number, testo: string, autore: 
   return commento;
 }
 
-export async function aggiungiAllegato(ticketId: number, data: any) { //per allegare un file a un ticket (salvato come data URL)
+export async function aggiungiAllegato(ticketId: number, data: any) { //per allegare un file a un ticket
   const t = await db.ticket.findUnique({ where: { id: ticketId } });
   if (!t) throw new ApiError(404, "Ticket non trovato");
   if (!data.nomeFile || !data.tipo || !data.dati) throw new ApiError(400, "Allegato non valido"); //servono nome, tipo e contenuto del file

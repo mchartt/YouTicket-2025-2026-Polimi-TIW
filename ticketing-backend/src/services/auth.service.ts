@@ -1,11 +1,17 @@
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { db } from "../config/db";
 import { ApiError } from "../errors/ApiError";
 import { registerZ } from "../schemas/auth.schema";
 import { assegnaInAttesa } from "./tickets.service";
 
 //DEFINISCO DEGLI UTILS
+const JWT_SECRET = process.env.JWT_SECRET; //il secret arriva SOLO dall'env: niente fallback hardcoded
+if (!JWT_SECRET) throw new Error("JWT_SECRET mancante: impostalo nel .env"); //crash all'avvio se manca, così non si firma con un secret noto
+const signToken = (u: { id: number; username: string; ruolo: string | null }) => //un solo punto che firma il token (usato da register e login)
+  jwt.sign({ id: u.id, username: u.username, ruolo: u.ruolo }, JWT_SECRET, { expiresIn: "7d" });
+
 const clean = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "."); //funzione per pulire il nome e il cognome
 const baseUsername = (nome: string, cognome: string, ruolo: string) => { //per generare un username univoco
   const u = [clean(nome), clean(cognome)].filter(Boolean).join("."); //join per concatenare i valori con un punto || filter(Boolean) per rimuovere i valori vuoti
@@ -29,14 +35,19 @@ export async function register(data: z.infer<typeof registerZ>) { //mi assicuro 
 
   const username = await prossimoUsername(data.nome, data.cognome, data.ruolo); //genero un username univoco
   const user = await db.user.create({ data: { username, password: await bcrypt.hash(data.password, 10), nome: data.nome, cognome: data.cognome, email: data.email, ruolo: data.ruolo } });
-  return { id: user.id, username: user.username, ruolo: user.ruolo, nome: user.nome };
+  const token = signToken(user);
+
+  return { token, user: { id: user.id, username: user.username, ruolo: user.ruolo, nome: user.nome } };
 }
 
 export async function login(username: string, pass: string) {
   if (!username || !pass) throw new ApiError(400, "Username e password sono obbligatori"); //evito il crash se i campi mancano
   const u = await db.user.findFirst({ where: { username: { equals: username.trim(), mode: "insensitive" } } });
   if (!u || !(await bcrypt.compare(pass, u.password))) throw new ApiError(401, "Credenziali non valide"); //se l'utente non esiste o la password non è corretta, lancio un errore
-  return { id: u.id, username: u.username, ruolo: u.ruolo, nome: u.nome, autoAssegnazione: u.autoAssegnazione };
+  
+  const token = signToken(u);
+
+  return { token, user: { id: u.id, username: u.username, ruolo: u.ruolo, nome: u.nome, autoAssegnazione: u.autoAssegnazione } };
 }
 
 

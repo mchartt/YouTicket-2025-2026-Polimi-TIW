@@ -3,6 +3,7 @@ import { asyncHandler } from "../middlewares/asyncHandler";
 import * as ticketsController from "../controllers/tickets.controller";
 import multer from "multer";
 import fs from "fs";
+import { requireAuth, requireRole } from "../middlewares/requireAuth";
 
 // Assicuriamoci che la cartella uploads esista
 if (!fs.existsSync("uploads")) {
@@ -13,15 +14,17 @@ const upload = multer({ dest: "uploads/" });
 
 export const ticketsRoutes = Router(); //creo un'istanza di Router per definire le route
 
+ticketsRoutes.use(requireAuth);
+
 //DEFINIZIONE ROUTE TICKET
 ticketsRoutes.get("/search", asyncHandler(ticketsController.getTickets));
 ticketsRoutes.get("/stats/feedback", asyncHandler(ticketsController.getStatsFeedback));
 ticketsRoutes.get("/:id/allegati/:allegatoId/download", asyncHandler(ticketsController.scaricaAllegato));
 ticketsRoutes.get("/:id", asyncHandler(ticketsController.getTicketDetails));
 ticketsRoutes.post("/", asyncHandler(ticketsController.createTicket));
-ticketsRoutes.patch("/:id/priorita", asyncHandler(ticketsController.aggiornaPriorita));
-ticketsRoutes.patch("/:id/stato", asyncHandler(ticketsController.aggiornaStato));
-ticketsRoutes.patch("/:id/assegna", asyncHandler(ticketsController.prendiInCarico));
+ticketsRoutes.patch("/:id/priorita", requireRole("TECNICO"), asyncHandler(ticketsController.aggiornaPriorita));
+ticketsRoutes.patch("/:id/stato", requireRole("TECNICO"), asyncHandler(ticketsController.aggiornaStato));
+ticketsRoutes.patch("/:id/assegna", requireRole("TECNICO"), asyncHandler(ticketsController.prendiInCarico));
 ticketsRoutes.patch("/:id/archivia", asyncHandler(ticketsController.archiviaTicket));
 ticketsRoutes.patch("/:id", asyncHandler(ticketsController.modificaTicket));
 ticketsRoutes.post("/:id/commenti", asyncHandler(ticketsController.aggiungiCommento));

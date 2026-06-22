@@ -8,4 +8,4 @@ export const login = async (req: any, res: any) => {
   const { username, password } = loginZ.parse(req.body);
   return res.json(await authService.login(username, password));
 }; //per loggarsi
-export const toggleAutoAssegnazione = async (req: any, res: any) => res.json(await authService.toggleAutoAssegnazione(req.body.tecnicoUsername, !!req.body.attiva)); //per attivare o disattivare l'auto-assegnazione
+export const toggleAutoAssegnazione = async (req: any, res: any) => res.json(await authService.toggleAutoAssegnazione(req.user.username, !!req.body.attiva)); //per attivare o disattivare l'auto-assegnazione

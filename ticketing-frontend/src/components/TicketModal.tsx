@@ -7,16 +7,16 @@ import { COLORE_STATO } from "../constants/ticketStatus";
 import Allegati from "./Allegati";
 import Conversazione from "./Conversazione";
 
-export default function TicketModal({ id, iniziale, cats, onClose }: any) {
+export default function TicketModal({ id: ticketId, iniziale: ticketIniziale, cats: categorie, onClose }: any) {
   const { user, notify } = useContext(AppCtx);
 
-  const isNuovo = id === -1;
+  const isNuovo = ticketId === -1;
 
   const [ticket, setTicket] = useState<TicketDetail | null>(
-    iniziale ? { ...iniziale, commenti: [], storicoStati: [], allegati: [] } : null
+    ticketIniziale ? { ...ticketIniziale, commenti: [], storicoStati: [], allegati: [] } : null
   );
 
-  const [form, setForm] = useState({ titolo: "", desc: "", cat: cats[0]?.nome || "" });
+  const [form, setForm] = useState({ titolo: "", desc: "", cat: categorie[0]?.nome || "" });
 
   const [allegatiNuovi, setAllegatiNuovi] = useState<any[]>([]); //allegati scelti nella nuova richiesta, caricati dopo aver creato il ticket
 
@@ -39,7 +39,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
 
   useEffect(() => {
     if (isNuovo) return; // se è un nuovo ticket non devo fare la richiesta al server
-    api.dettagliTicket(id) //richiesta iniziale per prendere i dettagli del ticket
+    api.dettagliTicket(ticketId) //richiesta iniziale per prendere i dettagli del ticket
       .then(setTicket) //aggiorno stato ticket con i dati presi dal server così si mostra il dettaglio del ticket
       .catch(() => { // se la richiesta fallisce mostro un messaggio di errore e chiudo il modal
         notify("Errore nel caricamento");
@@ -48,7 +48,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
 
     //apro la connessione Socket.IO e dico al server quale chat sto seguendo
     const socket = io(api.serverURL());
-    socket.emit("seguiTicket", id);
+    socket.emit("seguiTicket", ticketId);
     //vado ad emettere l'evento segui ticket con l'id del ticket che sto guardando, così il server sa a chi mandare i nuovi commenti di questo ticket
     socket.on("nuovoCommento", (commento: any) => { //il server mi manda il nuovo commento
       setTicket(prev => { //controllo che il nuovo commemto non sia duplicato
@@ -58,7 +58,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       });
     });
     return () => { socket.disconnect(); }; //chiudo la connessione quando esco dal ticket
-  }, [id]);
+  }, [ticketId]);
 
   //------------------------------------------------------------------------
   //--- FUNZIONI PER GESTIRE LE AZIONI SUL TICKET: CREAZIONE, COMMENTO, CAMBIO STATO, ECC.---//
@@ -68,7 +68,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //ricarico i dati del ticket ad ogni operazione
   //diverso da prima mi serve solo per ricaricare i dati quando faccio piccole modifiche
   const ricarica = async () => {
-    const ticketAggiornato = await api.dettagliTicket(id);
+    const ticketAggiornato = await api.dettagliTicket(ticketId);
     setTicket(ticketAggiornato);
   };
 
@@ -79,9 +79,8 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
       const nuovo = await api.creaTicket({
         titolo: form.titolo,
         descrizione: form.desc,
-        categoria: form.cat,
-        autore: user.username
-      });
+        categoria: form.cat
+      }); //l'autore lo imposta il server dal token
       //ora che il ticket esiste e ha un id, carico gli allegati scelti nel form
       for (const allegato of allegatiNuovi) {
         const formData = new FormData();
@@ -100,7 +99,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const aggiungiCommento = async () => {
     if (!commento.trim()) return; //se il commento è vuoto non faccio nulla
     try { //RICORDATI: inizialmente il commento parte vuoto poi viene aggiornato al click del bottone invia, se il commento è solo spazi vuol dire che è vuoto e non lo invio
-      await api.aggiungiCommento(id, { testo: commento, autoreUsername: user.username }); //salvo nel backend
+      await api.aggiungiCommento(ticketId, { testo: commento }); //salvo nel backend (l'autore è quello del token)
       setCommento(""); //pulisco il commento dopo l'invio: il commento comparirà via WebSocket
     } catch (err: any) {
       notify(err.message); //se c'è un errore mostro il messaggio di errore
@@ -110,7 +109,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //funzione per cambiare lo stato del ticket, prende in input il nuovo stato e lo invia al server
   const cambiaStato = async (nuovoStato: string) => {
     try { //stessa cosa di prima
-      await api.cambiaStato(id, { stato: nuovoStato, chiEsegueAzione: user.username });
+      await api.cambiaStato(ticketId, { stato: nuovoStato });
       notify("Stato aggiornato");
       ricarica();
     } catch (err: any) {
@@ -121,7 +120,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //funzione per cambiare priorità prendendola dal form e inviandola al server
   const cambiaPriorita = async (priorita: string) => {
     try {
-      await api.changePriority(id, priorita, user.username);
+      await api.changePriority(ticketId, priorita);
       notify("Priorità aggiornata");
       ricarica(); //ricarico i dati del ticket per aggiornare la priorità
     } catch (err: any) {
@@ -132,7 +131,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //funzione per cambiare lo stato del ticket da IN ATTESA a PRESO IN CARICO
   const prendiInCarico = async () => {
     try {
-      await api.takeCharge(id, user.username);
+      await api.takeCharge(ticketId);
       notify("Ticket preso in carico");
       ricarica(); //ricarico i dati del ticket per aggiornare lo stato e il tecnico assegnato
     } catch (err: any) {
@@ -143,7 +142,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //funzione per inviare la valutazione sula risoluzione del ticket a partire dai dati del form
   const inviaValutazione = async () => {
     try {
-      await api.inviaFeedback(id, stelle);
+      await api.inviaFeedback(ticketId, stelle);
       notify("Feedback inviato!");
       ricarica();
     } catch (err: any) {
@@ -162,7 +161,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   const salvaModifica = async (e: any) => {
     e.preventDefault();
     try {
-      await api.modificaTicket(id, { ...editForm, autore: user.username });
+      await api.modificaTicket(ticketId, editForm); //l'autore lo verifica il server dal token
       notify("Ticket aggiornato");
       setModifica(false);
       ricarica();
@@ -174,7 +173,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
   //archivio un ticket risolto: esce dalla lista attiva e finisce nella sezione archivio
   const archivia = async () => {
     try {
-      await api.archiviaTicket(id);
+      await api.archiviaTicket(ticketId);
       notify("Ticket archiviato");
       onClose();
     } catch (err: any) {
@@ -231,7 +230,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
               value={form.titolo} onChange={e => setForm({ ...form, titolo: e.target.value })} />
             <select required className="form-select mb-3" value={form.cat}
               onChange={e => setForm({ ...form, cat: e.target.value })}>
-              {cats.map((c: any) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+              {categorie.map((c: any) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
             <textarea required maxLength={200} rows={5} className="form-control mb-1" placeholder="Descrivi il problema"
               value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} />
@@ -271,7 +270,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
                       <label className="form-label small fw-bold mb-1">Categoria</label>
                       <select required className="form-select mb-3" value={editForm.categoria}
                         onChange={e => setEditForm({ ...editForm, categoria: e.target.value })}>
-                        {cats.map((c: any) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                        {categorie.map((c: any) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
                       </select>
                       <label className="form-label small fw-bold mb-1">Descrizione</label>
                       <textarea required maxLength={200} rows={4} className="form-control mb-1"
@@ -309,7 +308,7 @@ export default function TicketModal({ id, iniziale, cats, onClose }: any) {
                 </>)}
 
                 {/* ----ALLEGATI: in sola lettura, si scaricano e basta (si aggiungono solo creando la richiesta)---- */}
-                <Allegati allegati={ticket.allegati} ticketId={id} puoModificare={false} />
+                <Allegati allegati={ticket.allegati} ticketId={ticketId} puoModificare={false} />
 
                 {/* ----SEZIONE PER IL TECNICO: PRENDI IN CARICO, CAMBIA STATO E PRIORITA'---- */}
                 {(flagPuoPrendereInCarico || (tecnicoAssegnato && !risolto)) && (

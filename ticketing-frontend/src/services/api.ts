@@ -4,9 +4,14 @@ const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 //funzione generica per fare richieste HTTP all'API, gestendo errori e parsing della risposta
 async function req(path: string, method = "GET", body?: any) {
   try {
+    const token = sessionStorage.getItem("token");
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (body && !(body instanceof FormData)) headers["Content-Type"] = "application/json";
+
     const res = await fetch(BASE + path, {
       method, //metodo HTTP (GET, POST, PATCH, DELETE, ecc.)
-      headers: (body && !(body instanceof FormData)) ? { "Content-Type": "application/json" } : undefined,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: (body && !(body instanceof FormData)) ? JSON.stringify(body) : body
     });
 
@@ -37,15 +42,18 @@ async function req(path: string, method = "GET", body?: any) {
 export const api = {
   login:                    (b: any) => req("/auth/login", "POST", b),
   register:                 (b: any) => req("/auth/register", "POST", b),
-  categorie:                     () => req("/categorie?attive=true"),
+  categorie:                     () => req("/categorie"),
+  creaCategoria:        (nome: string) => req("/categorie", "POST", { nome }),
+  modificaCategoria:    (id: number, nome: string) => req(`/categorie/${id}`, "PATCH", { nome }),
+  eliminaCategoria:     (id: number) => req(`/categorie/${id}`, "DELETE"),
   tickets:                  (q = "") => req(`/tickets/search${q ? "?" + q : ""}`),
   dettagliTicket:            (id: number) => req(`/tickets/${id}`),
   creaTicket:             (b: any) => req("/tickets", "POST", b),
   modificaTicket:               (id: number, b: any) => req(`/tickets/${id}`, "PATCH", b),
   archiviaTicket:            (id: number) => req(`/tickets/${id}/archivia`, "PATCH"),
   cambiaStato:             (id: number, b: any) => req(`/tickets/${id}/stato`, "PATCH", b),
-  changePriority:           (id: number, p: string, tecnico: string) => req(`/tickets/${id}/priorita`, "PATCH", { priorita: p, tecnicoUsername: tecnico }),
-  takeCharge:               (id: number, tecnico: string) => req(`/tickets/${id}/assegna`, "PATCH", { tecnicoUsername: tecnico }),
+  changePriority:           (id: number, p: string) => req(`/tickets/${id}/priorita`, "PATCH", { priorita: p }), //il tecnico è quello del token lato server
+  takeCharge:               (id: number) => req(`/tickets/${id}/assegna`, "PATCH"), //prende in carico chi è loggato (token)
   aggiungiCommento:               (id: number, b: any) => req(`/tickets/${id}/commenti`, "POST", b),
   aggiungiAllegato:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
   aggiungiURL:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
@@ -53,5 +61,5 @@ export const api = {
 
   inviaFeedback:             (id: number, valutazione: number) => req(`/tickets/${id}/feedback`, "POST", { valutazione }),
   stats:                    (tecnico = "") => req(`/tickets/stats/feedback${tecnico ? "?tecnico=" + tecnico : ""}`),
-  toggleAutoAssegnazione:   (username: string, attiva: boolean) => req("/auth/auto-assegnazione", "PATCH", { tecnicoUsername: username, attiva }),
+  toggleAutoAssegnazione:   (attiva: boolean) => req("/auth/auto-assegnazione", "PATCH", { attiva }), //l'utente è quello del token lato server
 };

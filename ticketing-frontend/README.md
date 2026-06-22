@@ -24,12 +24,13 @@ Il codice è organizzato in cartelle per tipo (componenti, servizi, tipi, ecc.):
 | `src/main.tsx` | Punto di ingresso dell'app React. Monta `App` dentro `#root` e importa Bootstrap. |
 | `src/App.tsx` | Gestisce utente loggato, logout, notifiche e layout principale. |
 | `src/components/Auth.tsx` | Schermata di accesso e registrazione, con controlli base sui campi. |
-| `src/components/Dashboard.tsx` | Lista ticket, filtri, statistiche tecnico e apertura della modale ticket. |
+| `src/components/Dashboard.tsx` | Lista ticket, filtri, statistiche tecnico, apertura della modale ticket e accesso alla gestione categorie. |
 | `src/components/TicketModal.tsx` | Creazione ticket, dettaglio ticket, commenti, cambio stato, priorita e feedback. |
+| `src/components/GestioneCategorie.tsx` | Modale del tecnico per creare, rinominare ed eliminare le categorie. |
 | `src/services/api.ts` | Funzioni `fetch` verso il backend. Usa `VITE_API_BASE_URL` se presente. |
 | `src/context/AppContext.ts` | Context React (`AppCtx`) per condividere dati tra i componenti senza passarli come prop. |
 | `src/constants/ticketStatus.ts` | Mappa stato del ticket → classi Bootstrap per i colori dei badge. |
-| `src/types/index.routes.ts` | Tipi TypeScript condivisi tra i componenti. |
+| `src/types/index.ts` | Tipi TypeScript condivisi tra i componenti. |
 | `public/logo-ticket.svg` | Logo dell'app, usato come favicon. |
 | `vercel.json` | Configurazione Vercel per build Vite e fallback SPA su `index.html`. |
 
@@ -51,6 +52,7 @@ L'interfaccia usa Bootstrap 5, importato in `src/main.tsx`. Non c'è un file CSS
 - Storico cambi stato nel dettaglio.
 - Filtri tecnico per categoria, stato, priorita e tecnico assegnato.
 - Feedback utente sui ticket risolti o chiusi.
+- Gestione categorie per il tecnico: creazione, rinomina ed eliminazione dalla dashboard.
 
 ---
 

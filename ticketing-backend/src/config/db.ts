@@ -8,10 +8,10 @@ export async function bootstrapDb() { //sync si mette di norma per le funzioni c
   if (count === 0) {
     await db.categoria.createMany({ //creo all'avvio del db le categorie di default altriemnti non potrei creare ticket
       data: [
-        { nome: "Hardware", colore: "#0066ff", attivo: true },
-        { nome: "Software", colore: "#7c3aed", attivo: true },
-        { nome: "Rete", colore: "#059669", attivo: true },
-        { nome: "Account", colore: "#d97706", attivo: true }
+        { nome: "Hardware", colore: "#0066ff" },
+        { nome: "Software", colore: "#7c3aed" },
+        { nome: "Rete", colore: "#059669" },
+        { nome: "Account", colore: "#d97706" }
       ]
     });
     console.log("[db] Categorie base create.");

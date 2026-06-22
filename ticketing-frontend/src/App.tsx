@@ -24,13 +24,15 @@ export default function App() {
   //  in modo da poterle recuperare al successivo accesso all'applicazione.
 
   //DEFINISCO LE FUNZIONI DI LOGIN, LOGOUT E NOTIFICA CHE SARANNO DISPONIBILI IN TUTTA L'APP TRAMITE IL CONTEXTO AppCtx
-  const login = (u: User) => {
-    sessionStorage.setItem("utente", JSON.stringify(u));
-    setUser(u);
+  const login = (data: { token: string, user: User }) => {
+    sessionStorage.setItem("token", data.token);
+    sessionStorage.setItem("utente", JSON.stringify(data.user));
+    setUser(data.user);
   };
 
   //funzione di logout che rimuove l'utente dal sessionStorage e setta user a null
   const logout = () => {
+    sessionStorage.removeItem("token");
     sessionStorage.removeItem("utente");
     setUser(null);
   };
