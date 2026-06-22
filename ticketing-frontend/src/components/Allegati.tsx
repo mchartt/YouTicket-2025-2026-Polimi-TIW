@@ -11,10 +11,11 @@ export default function Allegati({ allegati, ticketId, puoModificare, onCarica: 
           {allegati.map((a: any, i: number) => (
             <span key={a.id ?? i} className="d-inline-flex align-items-center gap-2 border rounded-pill bg-white ps-3 pe-2 py-1">
               {ticketId ? (
-                //allegato già salvato sul ticket: lo si può scaricare
-                <a className="small text-decoration-none text-truncate" style={{ maxWidth: 140 }} href={api.aggiungiURL(ticketId, a.id)} target="_blank" rel="noreferrer" title={a.nomeFile}>
+                //allegato già salvato sul ticket: lo si può scaricare (fetch autenticata, non link diretto)
+                <button type="button" className="btn btn-link small text-decoration-none text-truncate p-0 lh-1" style={{ maxWidth: 140 }} title={a.nomeFile}
+                  onClick={() => api.scaricaAllegato(ticketId, a.id, a.nomeFile).catch((e: any) => alert(e.message))}>
                   <i className="fa-solid fa-download me-2" />{a.nomeFile}
-                </a>
+                </button>
               ) : (
                 //allegato scelto in fase di creazione: non è ancora sul server, mostro solo il nome
                 <span className="small text-truncate" style={{ maxWidth: 140 }} title={a.nomeFile}>

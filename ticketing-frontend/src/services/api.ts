@@ -56,7 +56,23 @@ export const api = {
   takeCharge:               (id: number) => req(`/tickets/${id}/assegna`, "PATCH"), //prende in carico chi è loggato (token)
   aggiungiCommento:               (id: number, b: any) => req(`/tickets/${id}/commenti`, "POST", b),
   aggiungiAllegato:            (id: number, b: any) => req(`/tickets/${id}/allegati`, "POST", b),
-  aggiungiURL:            (id: number, allegatoId: number) => `${BASE}/tickets/${id}/allegati/${allegatoId}/download`,
+  scaricaAllegato: async (id: number, allegatoId: number, nomeFile: string) => { //il browser non manda l'header Authorization sui link diretti: scarico via fetch autenticata come blob
+    const token = sessionStorage.getItem("token");
+    const res = await fetch(`${BASE}/tickets/${id}/allegati/${allegatoId}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) { //riuso la stessa logica di errore del backend (es. 401 token, 403 permessi)
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Download dell'allegato fallito");
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob); //creo un URL temporaneo in memoria e forzo il download
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeFile;
+    a.click();
+    URL.revokeObjectURL(url); //libero la memoria
+  },
   serverURL:                        () => BASE.replace(/\/api\/?$/, ""), //da http(s)://host/api a http(s)://host per la chat Socket.IO
 
   inviaFeedback:             (id: number, valutazione: number) => req(`/tickets/${id}/feedback`, "POST", { valutazione }),
